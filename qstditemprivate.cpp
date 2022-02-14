@@ -89,8 +89,56 @@ inline int QStdItemPrivate::childIndex(const QStdItem *child) const
    return childsLastIndexInParent;
 }
 
+Qt::ItemFlags QStdItemPrivate::setFlags(Qt::ItemFlags f){ return setData(static_cast<int>(f),Qt::UserRole-1).value<Qt::ItemFlags>();}
+QVariant QStdItemPrivate::setData(int m_role,const QVariant& m_value)
+{
+    QVariant old_value;
+
+              m_role = (m_role == Qt::EditRole) ? Qt::DisplayRole : m_role;
+
+              const QList<int> roles((m_role == Qt::DisplayRole) ?
+                                          QList<int>({Qt::DisplayRole, Qt::EditRole}) :
+                                          QList<int>({m_role}));
+
+              for (auto it = values.begin(); it != values.end(); ++it)
+              {
+                  if ((*it).role == m_role)
+                  {
+                      if (m_value.isValid())
+                      {
+                          if ((*it).value.userType() == m_value.userType() && (*it).value == m_value)
+                              return m_value;  // nothing to do here , because old value is identical to new value
+
+                          old_value= (*it).value; // save the old value to be able to restore it later
+
+                              (*it).value = m_value;
 
 
+                      } else {
+                          // Don't need to assign proper it after erase() since we
+                          // return unconditionally in this code path.
+
+                          old_value= (*it).value;
+
+
+                          values.erase(it);
+
+                      }
+
+                      if (model)
+                          model->d_func()->itemChanged(q_func(), roles);
+                      return old_value;
+                  }
+              }
+
+
+              // 'this_item' had no data values set prior to this fcn call
+              values.append(QStdItemData(m_role, m_value));
+              if (model)
+                  model->d_func()->itemChanged(q_func(), roles);
+
+              return QVariant();
+}
 
 
 QPair<int, int> QStdItemPrivate::position() const

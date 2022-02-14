@@ -64,6 +64,7 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
     setupUi(this);
+    setWindowTitle("qstditemmodel demo");
 
 
      model = new QStdItemModel(this);
