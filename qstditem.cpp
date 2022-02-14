@@ -1168,14 +1168,30 @@ int QStdItem::type() const
 */
 void QStdItem::read(QDataStream &in)
 {
-   qDebug()<< "<QStdItem::read(QDataStream& )>";
+  scope_tagger t{ "QStdItem::read(QDataStream& )"};
 
    Q_D(QStdItem);
+ /* qulonglong ptrval;
+  in >> ptrval;
+  d->model = reinterpret_cast<QStdItemModel*>(ptrval);*/
+
+
+  QByteArray ptr_val;
+  in>> ptr_val;
+  QStdItemModel* m_model = *reinterpret_cast<QStdItemModel**>( ptr_val.data() );
+
+  if(d->model==m_model)
+{
+      qDebug("code war richtig , test bestanden");
+  }
+//  setModel(m_model);
+
+  //..............................................
    in >> d->values;
    qint32 flags;
    in >> flags;
    setFlags(Qt::ItemFlags(flags));
-   qDebug()<< "</QStdItem::read(QDataStream& )>";
+
 }
 
 /*!
@@ -1187,11 +1203,19 @@ void QStdItem::read(QDataStream &in)
 void QStdItem::write(QDataStream &out) const
 {
 
-   qDebug()<< "<QStdItem::write(QDataStream&)>";
+  scope_tagger t{"QStdItem::write(QDataStream&)"};
    Q_D(const QStdItem);
+
+ // qulonglong ptrval{*reinterpret_cast<qulonglong*>( d->model ) };
+
+ // out<< ptrval;// out << d->model;
+
+  QByteArray ptr_data=  QByteArray::fromRawData(reinterpret_cast<char*>(model()),sizeof(QStdItemModel*) );
+out << ptr_data;
+//....................................
    out << d->values;
    out << flags();
-   qDebug()<< "</QStdItem::write(QDataStream&)>";
+
 }
 
 /*!

@@ -1042,16 +1042,16 @@ QModelIndex QStdItemModel::index(int row, int column, const QModelIndex &parent)
 
 bool QStdItemModel::insertColumns(int column, int count, const QModelIndex &parent)
 {
-    auto print_end=[](){qDebug().noquote()<< "</QStdItemModel::insertColumns(int column, int count,const QModelIndex& parent)>";};
-    auto print_start=[](){qDebug().noquote() << "<QStdItemModel::insertColumns(int column, int count,const QModelIndex& parent)>";};
 
-    print_start();
+    scope_tagger t{"QStdItemModel::insertColumns(int column, int count,const QModelIndex& parent)"};
+
+
 
     Q_D(QStdItemModel);
     QStdItem *item = parent.isValid() ? itemFromIndex(parent) : d->root.data();
 
     if (item == nullptr)
-    {print_end();
+    {
         return false;
     }
 
@@ -1071,11 +1071,10 @@ bool QStdItemModel::insertColumns(int column, int count, const QModelIndex &pare
         const QStdItem::StdItemCmd* cmd {static_cast<const QStdItem::StdItemCmd*>(undo_stack()->command(index) ) };
 
          if(cmd)
-         {print_end();
+         {
              return cmd->redoSuccessFlag();
          }
 
-         print_end();
          return true;
 
 }
@@ -1083,16 +1082,15 @@ bool QStdItemModel::insertColumns(int column, int count, const QModelIndex &pare
 
 bool QStdItemModel::insertRows(int row, int count, const QModelIndex &parent)
 {
-    auto print_start = [](){   qDebug().noquote() << "<QStdItemModel::insertRows(int row,int count,const QModelIndex& parent)>";};
-        auto print_end = [](){   qDebug().noquote() << "</QStdItemModel::insertRows(int row,int count,const QModelIndex& parent)>";};
+  scope_tagger t{ "QStdItemModel::insertRows(int row,int count,const QModelIndex& parent)"};
 
-  print_start();
+
 
     Q_D(QStdItemModel);
     QStdItem *item = parent.isValid() ? itemFromIndex(parent) : d->root.data();
 
     if (item == nullptr)
-    {print_end();
+    {
         return false;
     }
 
@@ -1111,12 +1109,10 @@ bool QStdItemModel::insertRows(int row, int count, const QModelIndex &parent)
    const QStdItem::StdItemCmd* cmd {static_cast<const QStdItem::StdItemCmd*>(undo_stack()->command(index) ) };
 
     if(cmd)
-    {print_end();
+    {
         return cmd->redoSuccessFlag();
      }
 
-
-    print_end();
     return true;
 }
 
@@ -1499,6 +1495,7 @@ bool QStdItemModel::dropMimeData(const QMimeData *data, Qt::DropAction action,
     {
         int r, c;
         QStdItem *item = d->createItem();
+        item->setModel(this); // lucas 14.02.22
         stream >> r >> c;
         d->decodeDataRecursive(stream, item);
 

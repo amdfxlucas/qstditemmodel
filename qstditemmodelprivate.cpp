@@ -104,17 +104,21 @@ void QStdItemModelPrivate::_q_emitItemChanged(const QModelIndex &topLeft,
 
 void QStdItemModelPrivate::itemChanged(QStdItem *item, const QList<int> &roles)
 {
-   qDebug()<< "<QStdItemModelPrivate::itemChanged(QStdItem* item, const QList<int>& roles)>";
+   scope_tagger t{ "QStdItemModelPrivate::itemChanged(QStdItem* item, const QList<int>& roles)"};
 
    Q_Q(QStdItemModel);
    Q_ASSERT(item);
-   if (item->d_func()->parent == nullptr)
+
+   if (item->d_func()->parent == nullptr) // is 'item' a top-level item ??
    {
        // Header item
        int idx = columnHeaderItems.indexOf(item);
-       if (idx != -1) {
+
+       if (idx != -1)
+       {
            emit q->headerDataChanged(Qt::Horizontal, idx, idx);
-       } else {
+       } else
+       {
            idx = rowHeaderItems.indexOf(item);
            if (idx != -1)
                emit q->headerDataChanged(Qt::Vertical, idx, idx);
@@ -125,41 +129,41 @@ void QStdItemModelPrivate::itemChanged(QStdItem *item, const QList<int> &roles)
        emit q->dataChanged(index, index, roles);
    }
 
-   qDebug()<< "</QStdItemModelPrivate::itemChanged(QStdItem* item, const QList<int>& roles)>";
+
 }
 
 void QStdItemModelPrivate::rowsAboutToBeInserted(QStdItem *parent,
                                                      int start, int end)
 {
 
-   qDebug() << "<QStdItemModelPrivate::rowsAboutToBeInserted(QStdItem* parent, int start,int end)>";
+  scope_tagger t{ "QStdItemModelPrivate::rowsAboutToBeInserted(QStdItem* parent, int start,int end)"};
    Q_Q(QStdItemModel);
    QModelIndex index = q->indexFromItem(parent);
    q->beginInsertRows(index, start, end);
-   qDebug() << "</QStdItemModelPrivate::rowsAboutToBeInserted(QStdItem* parent, int start,int end)>";
+
 }
 
 
 void QStdItemModelPrivate::columnsAboutToBeInserted(QStdItem *parent,
                                                         int start, int end)
 {
-   qDebug() << "<QStdItemModelPrivate::columnsAboutToBeInserted(QStdItem* parent,int start,int end)>";
+   scope_tagger t{ "QStdItemModelPrivate::columnsAboutToBeInserted(QStdItem* parent,int start,int end)"};
    Q_Q(QStdItemModel);
    QModelIndex index = q->indexFromItem(parent);
    q->beginInsertColumns(index, start, end);
-   qDebug() << "/<QStdItemModelPrivate::columnsAboutToBeInserted(QStdItem* parent,int start,int end)>";
+
 }
 
 
 void QStdItemModelPrivate::rowsAboutToBeRemoved(QStdItem *parent,
                                                     int start, int end)
 {
-   qDebug()<< "<QStdItemModelPrivate::rowsAboutToBeRemoved(QStdItem* parent, int start,int end)>";
+   scope_tagger t{ "QStdItemModelPrivate::rowsAboutToBeRemoved(QStdItem* parent, int start,int end)"};
 
    Q_Q(QStdItemModel);
    QModelIndex index = q->indexFromItem(parent);
    q->beginRemoveRows(index, start, end);
-   qDebug()<< "</QStdItemModelPrivate::rowsAboutToBeRemoved(QStdItem* parent, int start,int end)>";
+
 }
 
 
@@ -167,12 +171,12 @@ void QStdItemModelPrivate::columnsAboutToBeRemoved(QStdItem *parent,
                                                        int start, int end)
 {
 
-   qDebug()<< "<QStdItemModelPrivate::columnsAboutToBeRemoved(QStdItem* parent, int start,int end)>";
+   scope_tagger t{ "QStdItemModelPrivate::columnsAboutToBeRemoved"};
 
    Q_Q(QStdItemModel);
    QModelIndex index = q->indexFromItem(parent);
    q->beginRemoveColumns(index, start, end);
-   qDebug()<< "</QStdItemModelPrivate::columnsAboutToBeRemoved(QStdItem* parent, int start,int end)>";
+
 }
 
 
@@ -183,7 +187,7 @@ void QStdItemModelPrivate::rowsInserted(QStdItem *parent,
 
    Q_Q(QStdItemModel);
    if (parent == root.data())
-       rowHeaderItems.insert(row, count, nullptr);
+   {    rowHeaderItems.insert(row, count, nullptr);}
    q->endInsertRows();
 
 
@@ -196,8 +200,10 @@ void QStdItemModelPrivate::columnsInserted(QStdItem *parent,
    scope_tagger t{ "QStdItemModelPrivate::columnsInserted(QStdItem* parent, int start,int end)"};
 
    Q_Q(QStdItemModel);
+
+   // was root-item modified ?
    if (parent == root.data())
-       columnHeaderItems.insert(column, count, nullptr);
+   {    columnHeaderItems.insert(column, count, nullptr);}
    q->endInsertColumns();
 
 }
@@ -249,13 +255,17 @@ void QStdItemModelPrivate::columnsRemoved(QStdItem *parent,
 
 
 
-/* \internal
+/*
     Used by QStdItemModel::dropMimeData
     stream out an item and his children
  */
 void QStdItemModelPrivate::decodeDataRecursive(QDataStream &stream, QStdItem *item)
 {
+    // precondition: 'item'must be associated with a model
+
    scope_tagger t {"QStdItemModelPrivate::decodeDataRecursive"};
+
+
 
     int colCount, childCount;
     stream >> *item;

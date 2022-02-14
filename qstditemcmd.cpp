@@ -253,7 +253,7 @@ QStdItem::RemoveRowsCmd::~RemoveRowsCmd()
 
       QStdItemPrivate* const d= item->d_func();
 
-     UndoStackLock lock{this_model() ? this_model()->undo_stack() : nullptr}; // RAII class
+     UndoStackLock lock{this_model() ? this_model()->undo_stack() : nullptr};
 
 
    //   if(m_count!=-1)
@@ -622,7 +622,7 @@ m_reference()->validReference(m_reference());
    void QStdItem::InsertRowCmd::redo()
    {
        scope_tagger t{ "QStdItem::InsertRowCmd::redo"};
-   //     Q_D(QStdItem);
+
       auto item{this_item()};
 
       QStdItemPrivate* const d= item->d_func();
@@ -759,19 +759,19 @@ m_reference()->validReference(m_reference());
 
    void QStdItem::SetColumnCountCmd::undo()
    {
-      qDebug()<< "<QStdItem::SetColumnCountCmd::undo> ";
+      scope_tagger t{ "QStdItem::SetColumnCountCmd::undo"};
     //  redo(); // setColumnCount is an involution
       impl();
-      qDebug()<< "</QStdItem::SetColumnCountCmd::undo> ";
+
    }
 
 
    void QStdItem::SetRowCountCmd::redo()
    {
-       qDebug()<< "<QStdItem::SetRowCountCmd::redo> ";
+       scope_tagger t{ "QStdItem::SetRowCountCmd::redo"};
 
      impl();
-   qDebug()<< "</QStdItem::SetRowCountCmd::redo> ";
+
    }
 
      void QStdItem::SetRowCountCmd::impl()
@@ -803,11 +803,9 @@ m_reference()->validReference(m_reference());
 
    void QStdItem::SetRowCountCmd::undo()
    {
-      qDebug()<< "<QStdItem::SetRowCountCmd::undo> ";
+      scope_tagger t{ "QStdItem::SetRowCountCmd::undo"};
      //redo(); // setRowCount is an involution
       impl();
-      qDebug()<< "</QStdItem::SetRowCountCmd::undo> ";
-
 
    }
 
@@ -851,10 +849,10 @@ m_reference()->validReference(m_reference());
 
         //   this_model()->undo_stack()->beginMacro(QString("QStdItem::setChild(%1,%2)").arg(m_row).arg(m_column));
 
-        UndoStackLock lock{this_model() ? this_model()->undo_stack() : nullptr}; // RAII class
+        UndoStackLock lock{this_model() ? this_model()->undo_stack() : nullptr};
 
          m_child = item->takeChild(m_row,m_column) ; // the command regains ownership of the child item
-        // oder muss hier sogar removeRow her
+        // maybe even removeRow here ?
 
 
        // HIER muss ich die vorherige columnCount wiederherstellen,
@@ -893,9 +891,9 @@ m_reference()->validReference(m_reference());
    void QStdItem::ClearDataCmd::redo()
    {
 
-      qDebug()<< "<QStdItem::ClearDataCmd::redo> ";
+     scope_tagger t{ "QStdItem::ClearDataCmd::redo"};
 
-      // Q_D(QStdItem);
+
       QStdItemPrivate* const d= this_item()->d_func();
        UndoStackLock lock{this_model() ? this_model()->undo_stack() : nullptr}; // RAII class
 
@@ -916,8 +914,10 @@ m_reference()->validReference(m_reference());
       if (d->model)
           d->model->d_func()->itemChanged(this_item() , QList<int>{});
 
-      qDebug()<< "</QStdItem::ClearDataCmd::redo> ";
+
    }
+
+
 
    void QStdItem::ClearDataCmd::undo()
    {
