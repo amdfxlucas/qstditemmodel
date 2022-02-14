@@ -240,6 +240,7 @@ public:
 
     void decodeDataRecursive(QDataStream &stream, QStdItem *item);
 
+    QString m_filename;
     QList<QStdItem *> columnHeaderItems;
     QList<QStdItem *> rowHeaderItems;
     QHash<int, QByteArray> roleNames;

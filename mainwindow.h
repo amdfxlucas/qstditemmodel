@@ -54,6 +54,9 @@
 #include "ui_mainwindow.h"
 
 #include <QMainWindow>
+#include "path.h"
+
+class QStdItemModel;
 
 class MainWindow : public QMainWindow, private Ui::MainWindow
 {
@@ -61,13 +64,21 @@ class MainWindow : public QMainWindow, private Ui::MainWindow
 
 private:
     void update_undo();
+    bool okToClearData();
 public:
     MainWindow(QWidget *parent = nullptr);
+
+    void load(const QString &filename,    const Path& path);
+    // loads a model from file and restores the currentIndex in the view
 
 public slots:
     void updateActions();
 
+
+
 private slots:
+    void setCurrentIndex(const QModelIndex &index);
+
     void insertChild();
     bool insertColumn();
     void insertRow();
@@ -76,6 +87,13 @@ private slots:
 
     void undo();
     void redo();
+
+    void fileNew();
+    bool fileSave();
+    bool fileSaveAs();
+    void fileOpen();
+
+    QStdItemModel* model;
 };
 
 #endif // MAINWINDOW_H

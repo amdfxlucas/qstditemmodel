@@ -47,7 +47,7 @@ reference::reference(QStdItem* i,
     {
         m_model =i->model();
         m_index= i->index();
-        m_path = pathFromIndex(m_index);
+        m_path = QStdItemModel::pathFromIndex(m_index);
     }
 
     connect(this,&reference::validReference,
@@ -138,7 +138,7 @@ void reference::setModel(QStdItemModel* m)
 {
     m_model=m;
     m_index = m->indexFromItem(m_item);
-    m_path= pathFromIndex(m_index);
+    m_path= QStdItemModel::pathFromIndex(m_index);
 
     emit validReference(this);
     // notify the reference_controller,

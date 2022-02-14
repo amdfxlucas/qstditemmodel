@@ -65,6 +65,12 @@ QT_BEGIN_NAMESPACE
 
 //class QStdItemModelPrivate;
 
+
+
+// Path pathFromIndex(const QModelIndex &index);
+// QModelIndex pathToIndex(const Path &path, const QAbstractItemModel *model);
+
+
 class  QStdItemModel
         : public QAbstractItemModel
 {
@@ -103,6 +109,18 @@ class  QStdItemModel
 
 
 public:
+ static   Path pathFromIndex(const QModelIndex &index);
+    QModelIndex pathToIndex(const Path &path);
+
+    QString filename() const ;
+    void setFilename(const QString &filename);
+
+    void save();
+    void load();
+
+
+
+
     UndoStack* undo_stack() const{return m_stack;};
 
     explicit QStdItemModel(QObject *parent = nullptr);
@@ -206,8 +224,13 @@ Q_SIGNALS:
 
 protected:
     QStdItemModel(QStdItemModelPrivate &dd, QObject *parent = nullptr);
-
+    void saveToFile(const QString& filename) const;
+    void loadFromFile(const QString& filename );
 private:
+
+
+
+
    mutable UndoStack* m_stack;
 
     friend class QStdItemPrivate;

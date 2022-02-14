@@ -26,8 +26,6 @@ QT_BEGIN_NAMESPACE
 
 
 
-Path pathFromIndex(const QModelIndex &index);
-QModelIndex pathToIndex(const Path &path, const QAbstractItemModel *model);
 
 
 class QStdItemData

@@ -19,30 +19,6 @@
 
 #include "qstditemcommands.h"
 
-Path pathFromIndex(const QModelIndex &index)
-{
-   QModelIndex iter = index;
-   Path path;
-   while (iter.isValid())
-   {
-       path.prepend(PathItem(iter.row(), iter.column()));
-       iter = iter.parent();
-   }
-   return path;
-}
-// diese beiden funktionen sollten vielleicht in das modell aufgenommen werden
-// und keine freien funktionen mehr sein
-//( 'model' müsste dann nichtmehr expliziet übergeben werden, sondern wäre über this impliziet vorhanden)
-
-QModelIndex pathToIndex(const Path &path, const QAbstractItemModel *model)
-{
-   QModelIndex iter;
-   for (int i=0;i<path.size();i++)
-   {
-       iter = model->index(path[i].first, path[i].second, iter);
-   }
-   return iter;
-}
 
 Path QStdItem::StdItemCmd::this_path()
 {

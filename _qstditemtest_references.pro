@@ -16,6 +16,7 @@ INCLUDEPATH += "C:\Qt\6.1.2\msvc2019_64\include\QtGui\6.1.2\QtGui"
 
 # FORMS       = mainwindow.ui
 HEADERS     = mainwindow.h \
+    aqp.hpp \
     includes/qundogroup.h \
     myqtreeview.h \
     path.h \
@@ -30,6 +31,7 @@ HEADERS     = mainwindow.h \
     undostack_p.h
 RESOURCES   = editabletreemodel.qrc
 SOURCES     = mainwindow.cpp \
+              aqp.cpp \
               includes/qundogroup.cpp \
               main.cpp \
               myqtreeview.cpp \

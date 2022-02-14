@@ -63,7 +63,8 @@
 //QT_BEGIN_NAMESPACE
 
 
-
+ #include <QFile>
+#include <QSaveFile>
 
 
 static inline QString qStandardItemModelDataListMimeType()
@@ -173,6 +174,7 @@ void QStdItemModel::clear()
  scope_tagger t{"QStdItemModel::clear"};
 
 
+    m_stack->clear(); // forget the command history
 
     Q_D(QStdItemModel);
 
@@ -513,15 +515,14 @@ QStdItem *QStdItemModel::horizontalHeaderItem(int column) const
 */
 void QStdItemModel::setVerticalHeaderItem(int row, QStdItem *item)
 {
- auto print_start=[](){   qDebug()<< "<QStdItemModel::setHorizontalHeaderItem(int row,QStdItem* item)>";};
- auto print_end=[](){   qDebug()<< "</QStdItemModel::setHorizontalHeaderItem(int row,QStdItem* item)>";};
+ scope_tagger t{ "QStdItemModel::setHorizontalHeaderItem(int row,QStdItem* item)"};
 
- print_start();
+
+
 
     Q_D(QStdItemModel);
     if (row < 0)
-    {  print_end();
-        return;
+    {     return;
     }
 
     if (rowCount() <= row)
@@ -529,8 +530,7 @@ void QStdItemModel::setVerticalHeaderItem(int row, QStdItem *item)
 
     QStdItem *oldItem = d->rowHeaderItems.at(row);
     if (item == oldItem)
-    {print_end();
-        return;
+    {        return;
     }
 
     if (item)
@@ -542,8 +542,7 @@ void QStdItemModel::setVerticalHeaderItem(int row, QStdItem *item)
         {
             qWarning("QStdItem::setVerticalHeaderItem: Ignoring duplicate insertion of item %p",
                      item);
-            print_end();
-            return;
+              return;
         }
     }
 
@@ -554,7 +553,7 @@ void QStdItemModel::setVerticalHeaderItem(int row, QStdItem *item)
     d->rowHeaderItems.replace(row, item);
     emit headerDataChanged(Qt::Vertical, row, row);
 
-  print_end();
+
 }
 
 /*!
@@ -583,7 +582,7 @@ QStdItem *QStdItemModel::verticalHeaderItem(int row) const
 */
 void QStdItemModel::setHorizontalHeaderLabels(const QStringList &labels)
 {
-    qDebug()<< "<QStdItemModel::setHorizontalHeaderLabels(const QStringList& labels)>";
+    scope_tagger t{"QStdItemModel::setHorizontalHeaderLabels(const QStringList& labels)"};
 
     Q_D(QStdItemModel);
     if (columnCount() < labels.count())
@@ -599,7 +598,7 @@ void QStdItemModel::setHorizontalHeaderLabels(const QStringList &labels)
         }
         item->setText(labels.at(i));
     }
-    qDebug()<< "</QStdItemModel::setHorizontalHeaderLabels(const QStringList& labels)>";
+
 }
 
 /*!
@@ -710,7 +709,9 @@ scope_tagger t{ "QStdItemModel::appendRow(const QList<QStdItem*>& items)"};
 
     qDebug().noquote()<< "<QStdItemModel::undo_stack::beginMacro text=\"appendRow\">";
     undo_stack()->beginMacro("QStdItemModel::appendRow");
+
           invisibleRootItem()->appendRow(items);
+
     undo_stack()->endMacro();
     qDebug().noquote()<< "</QStdItemModel::undo_stack::beginMacro text=\"appendRow\">";
 
@@ -727,17 +728,19 @@ scope_tagger t{ "QStdItemModel::appendRow(const QList<QStdItem*>& items)"};
 */
 void QStdItemModel::appendColumn(const QList<QStdItem*> &items)
 {
-     auto print_start=[](){qDebug()<< "<QStdItemModel::appendColumn(const QList<QStdItem*>& items)>";};
-     auto print_end=[](){qDebug()<< "</QStdItemModel::appendColumn(const QList<QStdItem*>& items)>";};
+     scope_tagger t{ "QStdItemModel::appendColumn(const QList<QStdItem*>& items)"};
 
-print_start();
+
+
        qDebug().noquote()<< "<QStdItemModel::undo_stack::beginMacro text=\"appendColumn\">";
     undo_stack()->beginMacro("QStdItemModel::appendColumn");
+
            invisibleRootItem()->appendColumn(items);
+
     undo_stack()->endMacro();
     qDebug().noquote()<< "</QStdItemModel::undo_stack::beginMacro text=\"appendColumn\">";
 
-    print_end();
+
 }
 
 /*!
@@ -759,7 +762,7 @@ print_start();
 */
 void QStdItemModel::insertRow(int row, const QList<QStdItem*> &items)
 {
-     qDebug()<< "<QStdItemModel::insertRow(int row, const QList<QStdItem*>& items)>";
+   scope_tagger t{ "QStdItemModel::insertRow(int row, const QList<QStdItem*>& items)"};
 
 
      auto text{QString("insertRow: %1").arg(row)};
@@ -767,7 +770,9 @@ void QStdItemModel::insertRow(int row, const QList<QStdItem*> &items)
 
             qDebug().noquote() << "<QStdItemModel::undo_stack::beginMacro text=\"" + text+ "\">";
     undo_stack()->beginMacro("QStdItemModel::" + text);
+
             invisibleRootItem()->insertRow(row, items);
+
     undo_stack()->endMacro();
            qDebug()<< "<QStdItemModel::undo_stack::beginMacro text=\"" + text+ "\">";
 
@@ -791,7 +796,9 @@ void QStdItemModel::insertColumn(int column, const QList<QStdItem*> &items)
        qDebug().noquote()<< "<QStdItemModel::undo_stack::beginMacro text=\"" + text+ "\">";
 
     undo_stack()->beginMacro("QStdItemModel::" + text );
+
             invisibleRootItem()->insertColumn(column, items);
+
     undo_stack()->endMacro();
 
       qDebug().noquote()<< "</QStdItemModel::undo_stack::beginMacro text=\"" + text+ "\">";
@@ -809,12 +816,12 @@ void QStdItemModel::insertColumn(int column, const QList<QStdItem*> &items)
 */
 QStdItem *QStdItemModel::takeItem(int row, int column)
 {
-    qDebug()<< "<QStdItemModel::takeItem(int row,int column)>";
+  scope_tagger t{ "QStdItemModel::takeItem(int row,int column)"};
 
     Q_D(QStdItemModel);
     auto tmp{ d->root->takeChild(row, column)};
 
-    qDebug()<< "</QStdItemModel::takeItem(int row,int column)>";
+
     return tmp;
 }
 
@@ -830,11 +837,10 @@ QStdItem *QStdItemModel::takeItem(int row, int column)
 */
 QList<QStdItem*> QStdItemModel::takeRow(int row)
 {
-    qDebug()<< "<QStdItemModel::takeRow(int row)>";
+   scope_tagger t{"QStdItemModel::takeRow(int row)"};
     Q_D(QStdItemModel);
     auto tmp{ d->root->takeRow(row)};
 
-    qDebug()<< "</QStdItemModel::takeRow(int row)>";
     return tmp;
 }
 
@@ -850,10 +856,10 @@ QList<QStdItem*> QStdItemModel::takeRow(int row)
 */
 QList<QStdItem*> QStdItemModel::takeColumn(int column)
 {
-    qDebug()<< "<QStdItemModel::takeColumn(int column)>";
+    scope_tagger t{ "QStdItemModel::takeColumn"};
     Q_D(QStdItemModel);
     auto tmp{ d->root->takeColumn(column)};
-    qDebug()<< "</QStdItemModel::takeColumn(int column)>";
+
     return tmp;
 }
 
@@ -868,11 +874,11 @@ QList<QStdItem*> QStdItemModel::takeColumn(int column)
 */
 QStdItem *QStdItemModel::takeHorizontalHeaderItem(int column)
 {
-    qDebug()<< "<QStdItemModel::takeHorizontalHeaderItem(int column)>";
+    scope_tagger t{ "QStdItemModel::takeHorizontalHeaderItem(int column)"};
     Q_D(QStdItemModel);
     if ((column < 0) || (column >= columnCount()))
     {
-        qDebug()<< "</QStdItemModel::takeHorizontalHeaderItem(int column)>";
+
         return nullptr;
     }
 
@@ -883,7 +889,7 @@ QStdItem *QStdItemModel::takeHorizontalHeaderItem(int column)
         d->columnHeaderItems.replace(column, nullptr);
     }
 
-    qDebug()<< "</QStdItemModel::takeHorizontalHeaderItem(int column)>";
+
     return headerItem;
 }
 
@@ -898,14 +904,14 @@ QStdItem *QStdItemModel::takeHorizontalHeaderItem(int column)
 */
 QStdItem *QStdItemModel::takeVerticalHeaderItem(int row)
 {
-  auto print_start= [](){  qDebug()<< "<QStdItemModel::takeVerticalHeaderItem(int row)>";};
-  auto print_end= [](){  qDebug()<< "</QStdItemModel::takeVerticalHeaderItem(int row)>";};
+ scope_tagger t{ "QStdItemModel::takeVerticalHeaderItem"};
 
-  print_start();
+
+
 
     Q_D(QStdItemModel);
     if ((row < 0) || (row >= rowCount()))
-    {print_end();
+    {
         return nullptr;
     }
     QStdItem *headerItem = d->rowHeaderItems.at(row);
@@ -915,7 +921,7 @@ QStdItem *QStdItemModel::takeVerticalHeaderItem(int row)
         d->rowHeaderItems.replace(row, nullptr);
     }
 
-  print_end();
+
     return headerItem;
 }
 
@@ -936,13 +942,13 @@ int QStdItemModel::sortRole() const
 
 void QStdItemModel::setSortRole(int role)
 {
-   auto print_start=[](){  qDebug()<< "<QStdItemModel::setSortRole(int role)>";};
-   auto print_end=[](){  qDebug()<< "</QStdItemModel::setSortRole(int role)>";};
+   scope_tagger t{ "QStdItemModel::setSortRole"};
 
-   print_start();
+
+
     Q_D(QStdItemModel);
     d->sortRole = role;
-    print_end();
+
 }
 
 QBindable<int> QStdItemModel::bindableSortRole()
@@ -1101,7 +1107,9 @@ bool QStdItemModel::insertRows(int row, int count, const QModelIndex &parent)
 
       qDebug().noquote()<< "<QStdItemModel::undo_stack::beginMacro text=\"" + text+ "\">";
     undo_stack()->beginMacro("QStdItemModel::" + text );
+
             item->insertRows(row,count);
+
     undo_stack()->endMacro();
       qDebug().noquote() << "</QStdItemModel::undo_stack::beginMacro text=\"" + text+ "\">";
 
@@ -1141,55 +1149,57 @@ QModelIndex QStdItemModel::parent(const QModelIndex &child) const
 
 bool QStdItemModel::removeColumns(int column, int count, const QModelIndex &parent)
 {
-     auto print_start = [](){qDebug()<< "<QStdItemModel::removeColumns(int column, int count, const QModelIndex& parent)>";};
+     scope_tagger t{ "QStdItemModel::removeColumns(int column, int count, const QModelIndex& parent)"};
 
-     auto print_end = [](){qDebug()<< "</QStdItemModel::removeColumns(int column, int count, const QModelIndex& parent)>";};
+
 
     Q_D(QStdItemModel);
-print_start();
+
 
     QStdItem *item = d->itemFromIndex(parent);
 
     if ((item == nullptr) || (count < 1) || (column < 0) || ((column + count) > item->columnCount()))
-    {print_end();
+    {
         return false;
     }
     auto text{QString("removeColumns: %1 , %2").arg(column).arg(count)};
 
      qDebug().noquote()   << "<QStdItemModel::undo_stack::beginMacro text=\"" + text+ "\">";
     undo_stack()->beginMacro("QStdItemModel::" + text);
+
                 item->removeColumns(column, count);
+
     undo_stack()->endMacro();
      qDebug().noquote() << "</QStdItemModel::undo_stack::beginMacro text=\"" + text+ "\">";
 
-    print_end();
+
     return true;
 }
 
 
 bool QStdItemModel::removeRows(int row, int count, const QModelIndex &parent)
 {
-  auto print_start=[](){   qDebug()<< "<QStdItemModel::removeRows(int row,int count, const QModelIndex& parent)>";};
-  auto print_end=[](){   qDebug()<< "</QStdItemModel::removeRows(int row,int count, const QModelIndex& parent)>";};
+  scope_tagger t{ "QStdItemModel::removeRows(int row,int count, const QModelIndex& parent)"};
 
-  print_start();
 
     Q_D(QStdItemModel);
     QStdItem *item = d->itemFromIndex(parent);
 
     if ((item == nullptr) || (count < 1) || (row < 0) || ((row + count) > item->rowCount()))
-    {print_end();
+    {
         return false;
     }
     auto text{QString("removeRows: %1 , %2").arg(row).arg(count)};
 
     qDebug().noquote()<< "<QStdItemModel::undo_stack::beginMacro text=\"" + text+ "\">";
     undo_stack()->beginMacro("QStdItemModel::" + text);
+
                 item->removeRows(row, count);
+
     undo_stack()->endMacro();
     qDebug().noquote()<< "</QStdItemModel::undo_stack::beginMacro text=\"" + text+ "\">";
 
-    print_end();
+
     return true;
 }
 
@@ -1204,42 +1214,41 @@ int QStdItemModel::rowCount(const QModelIndex &parent) const
 
 bool QStdItemModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
-    auto print_start=[](){ qDebug()<< "<QStdItemModel::setData>";};
-    auto print_end=[](){ qDebug()<< "</QStdItemModel::setData>";};
+    scope_tagger t{ "QStdItemModel::setData"};
 
-    print_start();
+
     if (!index.isValid())
-    {print_end();
+    {
         return false;
     }
 
     QStdItem *item = itemFromIndex(index);
 
     if (item == nullptr)
-     {print_end();
+     {
         return false;
     }
 
     qDebug().noquote()<< "<QStdItemModel::undo_stack::beginMacro text=\"setData\">";
     undo_stack()->beginMacro("QStdItemModel::setData");
+
             item->setData(value, role);
+
     undo_stack()->endMacro();
     qDebug().noquote()<< "</QStdItemModel::undo_stack::beginMacro text=\"setData\">";
 
-   print_end();
+
     return true;
 }
 
 
 bool QStdItemModel::clearItemData(const QModelIndex &index)
 {
-    auto print_start=[](){ qDebug()<< "<QStdItemModel::clearItemData>";};
-    auto print_end=[](){ qDebug()<< "</QStdItemModel::clearItemData>";};
+    scope_tagger t{ "QStdItemModel::clearItemData"};
 
-    print_start();
 
     if (!checkIndex(index, CheckIndexOption::IndexIsValid))
-    {print_end();
+    {
         return false;
     }
 
@@ -1248,31 +1257,31 @@ bool QStdItemModel::clearItemData(const QModelIndex &index)
     QStdItem *item = d->itemFromIndex(index);
 
     if (!item)
-    {print_end();
+    {
         return false;
     }
     qDebug().noquote()<< "<QStdItemModel::undo_stack::beginMacro text=\"clearItemData\">";
     undo_stack()->beginMacro("QStdItemModel::clearItemData");
+
             item->clearData();
+
     undo_stack()->endMacro();
     qDebug().noquote() << "</QStdItemModel::undo_stack::beginMacro text=\"clearItemData\">";
 
-   print_end();
+
     return true;
 }
 
 
 bool QStdItemModel::setHeaderData(int section, Qt::Orientation orientation, const QVariant &value, int role)
 {
-  auto print_start=[](){   qDebug()<< "<QStdItemModel::setHeaderData(nit section,Qt::Orientation,const QVariant& value,int role)>";};
-  auto print_end=[](){   qDebug()<< "</QStdItemModel::setHeaderData(nit section,Qt::Orientation,const QVariant& value,int role)>";};
+  scope_tagger t{ "QStdItemModel::setHeaderData(nit section,Qt::Orientation,const QVariant& value,int role)"};
 
-  print_start();
     Q_D(QStdItemModel);
     if ((section < 0)
         || ((orientation == Qt::Horizontal) && (section >= columnCount()))
         || ((orientation == Qt::Vertical) && (section >= rowCount())))
-    {print_end();
+    {
         return false;
     }
 
@@ -1299,24 +1308,24 @@ bool QStdItemModel::setHeaderData(int section, Qt::Orientation orientation, cons
     if (headerItem)
     {
         headerItem->setData(value, role);
-      print_end();
+
         return true;
     }
-    print_end();
+
     return false;
 }
 
 
 bool QStdItemModel::setItemData(const QModelIndex &index, const QMap<int, QVariant> &roles)
 {
-auto print_end=[]() {qDebug()<< "</QStdItemModel::setItemData(const QModelIndex& index, const QMap<int,QVariant>& roles)>";};
-auto print_start=[](){     qDebug()<< "<QStdItemModel::setItemData(const QModelIndex& index, const QMap<int,QVariant>& roles)>";};
 
-print_start();
+scope_tagger t{ "QStdItemModel::setItemData(const QModelIndex& index, const QMap<int,QVariant>& roles)"};
+
+
 
     QStdItem *item = itemFromIndex(index);
     if (item == nullptr)
-    {print_end();
+    {
         return false;
     }
 
@@ -1327,18 +1336,18 @@ print_start();
 
        undo_stack()->endMacro();
 
-    print_end();
+
     return true;
 }
 
 void QStdItemModel::sort(int column, Qt::SortOrder order)
 {
-     qDebug()<< "<QStdItemModel::sort(int column, Qt::SortOrder order)>";
+    scope_tagger t{ "QStdItemModel::sort(int column, Qt::SortOrder order)"};
 
     Q_D(QStdItemModel);
     d->root->sortChildren(column, order);
 
-    qDebug()<< "</QStdItemModel::sort(int column, Qt::SortOrder order)>";
+
 }
 
 QStringList QStdItemModel::mimeTypes() const
@@ -1347,24 +1356,20 @@ QStringList QStdItemModel::mimeTypes() const
 }
 
 QMimeData *QStdItemModel::mimeData(const QModelIndexList &indexes) const
-{   auto print_end=[](){ qDebug()<< "</QStdItemModel::mimeData>";};
-    auto print_start=[](){ qDebug()<< "<QStdItemModel::mimeData>";};
+{ scope_tagger t{ "QStdItemModel::mimeData"};
 
-     print_start();
 
 
     QMimeData *data = QAbstractItemModel::mimeData(indexes);
     if (!data)
-    {
-       print_end();
+    {     
         return nullptr;
     }
 
     const QString format = qStandardItemModelDataListMimeType();
 
     if (!mimeTypes().contains(format))
-     {
-     print_end();
+     {     
         return data;
     }
 
@@ -1385,7 +1390,7 @@ QMimeData *QStdItemModel::mimeData(const QModelIndexList &indexes) const
         } else
         {
             qWarning("QStdItemModel::mimeData: No item associated with invalid index");
-           print_end();
+
             return nullptr;
         }
     }
@@ -1437,7 +1442,6 @@ QMimeData *QStdItemModel::mimeData(const QModelIndexList &indexes) const
 
     data->setData(format, encoded);
 
-  print_end();
     return data;
 }
 
@@ -1515,8 +1519,10 @@ bool QStdItemModel::dropMimeData(const QMimeData *data, Qt::DropAction action,
 
     // Compute the number of continuous rows upon insertion and modify the rows to match
     QList<int> rowsToInsert(bottom + 1);
+
     for (int i = 0; i < rows.count(); ++i)
         rowsToInsert[rows.at(i)] = 1;
+
     for (int i = 0; i < rowsToInsert.count(); ++i)
     {
         if (rowsToInsert.at(i) == 1)
@@ -1532,19 +1538,22 @@ bool QStdItemModel::dropMimeData(const QMimeData *data, Qt::DropAction action,
 
     // make space in the table for the dropped data
     int colCount = columnCount(parent);
+
     if (colCount < dragColumnCount + column)
     {
         insertColumns(colCount, dragColumnCount + column - colCount, parent);
         colCount = columnCount(parent);
     }
+
     insertRows(row, dragRowCount, parent);
 
     row = qMax(0, row);
     column = qMax(0, column);
 
     QStdItem *parentItem = itemFromIndex (parent);
+
     if (!parentItem)
-        parentItem = invisibleRootItem();
+    {    parentItem = invisibleRootItem();}
 
     QList<QPersistentModelIndex> newIndexes(items.size());
     // set the data in the table
@@ -1585,7 +1594,285 @@ bool QStdItemModel::dropMimeData(const QMimeData *data, Qt::DropAction action,
     return true;
 }
 
-QT_END_NAMESPACE
+
+QString QStdItemModel::filename() const
+{
+    return d_func()->m_filename;
+}
+
+void QStdItemModel::setFilename(const QString &filename)
+{
+    d_func()->m_filename=filename;
+}
+
+void QStdItemModel::save()
+{
+    saveToFile(filename());
+
+}
+
+void QStdItemModel::load()
+{
+    loadFromFile(filename() );
+}
+
+
+
+Path QStdItemModel::pathFromIndex(const QModelIndex &index)
+{
+   QModelIndex iter = index;
+   Path path;
+   while (iter.isValid())
+   {
+       path.prepend(PathItem(iter.row(), iter.column()));
+       iter = iter.parent();
+   }
+   return path;
+}
+
+
+QModelIndex QStdItemModel::pathToIndex(const Path &path)
+{
+   QModelIndex iter;
+   for (int i=0;i<path.size();i++)
+   {
+       iter = this->index(path[i].first, path[i].second, iter);
+   }
+   return iter;
+}
+
+
+void QStdItemModel::loadFromFile(const QString &filename)
+{
+     //qDebug()<< "<QStdItemModel::dropMimeData.´(const QMimeData* data,Qt::DropAction ,int row,int column, const QModelIndex& parent)";
+  auto print_start =[this](){undo_stack()->beginMacro("QStdItemModel::loadFromFile");
+                                qDebug()<< "<QStdItemModel::loadFromFile>";};
+  auto print_end =[this](){  undo_stack()->endMacro();
+                            qDebug()<< "</QStdItemModel::loadFromFile>";};
+
+  print_start();
+
+
+  clear();
+
+  int row{0};
+  int column{0};
+  auto parent{QModelIndex()};
+
+    Q_D(QStdItemModel);
+
+    QFile file{filename};
+    if(!file.open(QIODevice::ReadOnly))
+    {
+        // throw some very bad exception
+    }
+
+    // decode and insert
+  //  QByteArray encoded = data->data(format);
+  //  QDataStream stream(&encoded, QIODevice::ReadOnly);
+    QDataStream stream{&file};
+
+
+    //code based on QAbstractItemModel::decodeData
+    // adapted to work with QStdItem
+    int top = INT_MAX;
+    int left = INT_MAX;
+    int bottom = 0;
+    int right = 0;
+    QList<int> rows, columns;
+    QList<QStdItem *> items;
+
+    while (!stream.atEnd())
+    {
+        int r, c;
+        QStdItem *item = d->createItem();
+        item->setModel(this); // lucas 14.02.22
+        stream >> r >> c;
+        d->decodeDataRecursive(stream, item);
+
+        rows.append(r);
+        columns.append(c);
+        items.append(item);
+        top = qMin(r, top);
+        left = qMin(c, left);
+        bottom = qMax(r, bottom);
+        right = qMax(c, right);
+    }
+
+    // insert the dragged items into the table, use a bit array to avoid overwriting items,
+    // since items from different tables can have the same row and column
+    int dragRowCount = 0;
+    int dragColumnCount = right - left + 1;
+
+    // Compute the number of continuous rows upon insertion and modify the rows to match
+    QList<int> rowsToInsert(bottom + 1);
+
+    for (int i = 0; i < rows.count(); ++i)
+        rowsToInsert[rows.at(i)] = 1;
+
+    for (int i = 0; i < rowsToInsert.count(); ++i)
+    {
+        if (rowsToInsert.at(i) == 1)
+        {
+            rowsToInsert[i] = dragRowCount;
+            ++dragRowCount;
+        }
+    }
+    for (int i = 0; i < rows.count(); ++i)
+        rows[i] = top + rowsToInsert.at(rows.at(i));
+
+    QBitArray isWrittenTo(dragRowCount * dragColumnCount);
+
+    // make space in the table for the dropped data
+    int colCount = columnCount(parent);
+
+    if (colCount < dragColumnCount + column)
+    {
+        insertColumns(colCount, dragColumnCount + column - colCount, parent);
+        colCount = columnCount(parent);
+    }
+
+    insertRows(row, dragRowCount, parent);
+
+    row = qMax(0, row);
+    column = qMax(0, column);
+
+    QStdItem *parentItem = itemFromIndex (parent);
+
+    if (!parentItem)
+    {    parentItem = invisibleRootItem();}
+
+    QList<QPersistentModelIndex> newIndexes(items.size());
+    // set the data in the table
+    for (int j = 0; j < items.size(); ++j)
+    {
+        int relativeRow = rows.at(j) - top;
+        int relativeColumn = columns.at(j) - left;
+        int destinationRow = relativeRow + row;
+        int destinationColumn = relativeColumn + column;
+        int flat = (relativeRow * dragColumnCount) + relativeColumn;
+        // if the item was already written to, or we just can't fit it in the table, create a new row
+        if (destinationColumn >= colCount || isWrittenTo.testBit(flat))
+        {
+            destinationColumn = qBound(column, destinationColumn, colCount - 1);
+            destinationRow = row + dragRowCount;
+            insertRows(row + dragRowCount, 1, parent);
+            flat = (dragRowCount * dragColumnCount) + relativeColumn;
+            isWrittenTo.resize(++dragRowCount * dragColumnCount);
+        }
+        if (!isWrittenTo.testBit(flat))
+        {
+            newIndexes[j] = index(destinationRow, destinationColumn, parentItem->index());
+            isWrittenTo.setBit(flat);
+        }
+    }
+
+    for(int k = 0; k < newIndexes.size(); k++)
+    {
+        if (newIndexes.at(k).isValid())
+        {
+            parentItem->setChild(newIndexes.at(k).row(), newIndexes.at(k).column(), items.at(k));
+        } else {
+            delete items.at(k);
+        }
+    }
+
+    print_end();
+
+}
+
+void QStdItemModel::saveToFile(const QString& filename) const
+{ scope_tagger t{ "QStdItemModel::saveToFile"};
+
+
+
+
+    QByteArray encoded;
+    QDataStream stream(&encoded, QIODevice::WriteOnly);
+
+    /* Qt 4 way
+    QFile file(filename);
+    if (!file.open(QIODevice::WriteOnly|QIODevice::Text))
+    {
+        throw std::runtime_error("File Not open !" );
+    }*/
+
+    QSaveFile file(filename);
+    file.open(QIODevice::WriteOnly);
+
+
+
+    QSet<QStdItem*> itemsSet;
+    QStack<QStdItem*> stack;
+    itemsSet.reserve(1);
+    stack.reserve(1);
+
+
+
+        auto item = invisibleRootItem();
+
+            itemsSet << item;
+            stack.push(item);
+
+
+    //remove duplicates children
+ /*   {
+        QDuplicateTracker<QStdItem *> seen;
+
+        while (!stack.isEmpty())
+        {
+            QStdItem *itm = stack.pop();
+            if (seen.hasSeen(itm))
+                continue;
+
+            const QList<QStdItem*> &childList = itm->d_func()->children;
+
+            for (int i = 0; i < childList.count(); ++i)
+            {
+                QStdItem *chi = childList.at(i);
+                if (chi)
+                {
+                    itemsSet.remove(chi);
+                    stack.push(chi);
+                }
+            }
+        }
+
+        // after the while-loop the stack is empty !
+    }
+
+
+    stack.reserve(itemsSet.count());
+
+    for (QStdItem *item : qAsConst(itemsSet))
+        stack.push(item);
+*/
+
+    //stream everything recursively
+    while (!stack.isEmpty())
+    {
+        QStdItem *item = stack.pop();
+
+        if (itemsSet.contains(item)) //if the item is selection 'top-level', stream its position
+            stream << item->row() << item->column();
+
+        stream << *item << item->columnCount() << int(item->d_ptr->children.count());
+        stack += item->d_ptr->children;
+    }
+
+    // here the stack is empty again !
+
+   // data->setData(format, encoded);
+
+    file.write(encoded);
+
+    file.commit();
+
+
+}
+
+
+// QT_END_NAMESPACE
 
 #include "moc_qstditemmodel.cpp"
 

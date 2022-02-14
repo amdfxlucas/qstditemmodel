@@ -32,6 +32,11 @@ class Ui_MainWindow
 {
 public:
     QAction *exitAction;
+    QAction* saveAction;
+    QAction* openAction;
+    QAction* newAction;
+    QAction* saveAsAction;
+
     QAction *insertRowAction;
     QAction *removeRowAction;
     QAction *insertColumnAction;
@@ -61,8 +66,17 @@ public:
         redo_action=new QAction(MainWindow);
         redo_action->setObjectName(QString::fromUtf8("redoAction"));
 
+
+
+         saveAction= new QAction(MainWindow);
+         openAction = new QAction(MainWindow);
+         newAction= new QAction(MainWindow);
+        saveAsAction = new QAction(MainWindow);
+
         exitAction = new QAction(MainWindow);
         exitAction->setObjectName(QString::fromUtf8("exitAction"));
+
+
         insertRowAction = new QAction(MainWindow);
         insertRowAction->setObjectName(QString::fromUtf8("insertRowAction"));
         removeRowAction = new QAction(MainWindow);
@@ -73,8 +87,13 @@ public:
         removeColumnAction->setObjectName(QString::fromUtf8("removeColumnAction"));
         insertChildAction = new QAction(MainWindow);
         insertChildAction->setObjectName(QString::fromUtf8("insertChildAction"));
+
+
+
+
         centralwidget = new QWidget(MainWindow);
         centralwidget->setObjectName(QString::fromUtf8("centralwidget"));
+
         vboxLayout = new QVBoxLayout(centralwidget);
         vboxLayout->setSpacing(0);
         vboxLayout->setContentsMargins(0, 0, 0, 0);
@@ -104,16 +123,24 @@ public:
         menubar->setGeometry(QRect(0, 0, 573, 31));
         fileMenu = new QMenu(menubar);
         fileMenu->setObjectName(QString::fromUtf8("fileMenu"));
+
         actionsMenu = new QMenu(menubar);
         actionsMenu->setObjectName(QString::fromUtf8("actionsMenu"));
         MainWindow->setMenuBar(menubar);
+
         statusbar = new QStatusBar(MainWindow);
         statusbar->setObjectName(QString::fromUtf8("statusbar"));
         MainWindow->setStatusBar(statusbar);
 
         menubar->addAction(fileMenu->menuAction());
         menubar->addAction(actionsMenu->menuAction());
+
         fileMenu->addAction(exitAction);
+        fileMenu->addAction(openAction);
+        fileMenu->addAction(saveAction);
+        fileMenu->addAction(saveAsAction);
+        fileMenu->addAction(newAction);
+
         actionsMenu->addAction(insertRowAction);
         actionsMenu->addAction(insertColumnAction);
         actionsMenu->addSeparator();

@@ -73,10 +73,8 @@ QMap<int,QVariant> QStdItem::itemData()const
 
 void QStdItem::setItemData(const QMap<int, QVariant> &roles)
 {
-    auto print_start = [](){qDebug() << "<QStdItem::setItemData>";};
-    auto print_end = [](){qDebug() << "</QStdItem::setItemData>";};
+    scope_tagger t{ "QStdItem::setItemData"};
 
-    print_start();
 
     if(model())
     {
@@ -89,7 +87,7 @@ void QStdItem::setItemData(const QMap<int, QVariant> &roles)
 
     }
 
-    print_end();
+
 }
 
 

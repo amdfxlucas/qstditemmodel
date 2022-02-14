@@ -56,6 +56,10 @@
 
 #include "scope_tagger.h"
 
+#include "aqp.hpp"
+
+#include <QFileDialog>
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
@@ -67,7 +71,7 @@ MainWindow::MainWindow(QWidget *parent)
   //  file.open(QIODevice::ReadOnly);
 
   //  TreeModel *model = new TreeModel(headers, file.readAll());
-    QStdItemModel* model = new QStdItemModel(this);
+     model = new QStdItemModel(this);
   //  file.close();
 
      undo_view->setStack(reinterpret_cast<QUndoStack*>(model->undo_stack()) );
@@ -97,7 +101,150 @@ MainWindow::MainWindow(QWidget *parent)
     connect(redo_action,&QAction::triggered,this,&MainWindow::redo);
 
 
+    connect(openAction,&QAction::triggered, this,&MainWindow::fileOpen);
+    connect(newAction,&QAction::triggered, this,&MainWindow::fileNew);
+    connect(saveAction,&QAction::triggered, this,&MainWindow::fileSave);
+    connect(saveAsAction,&QAction::triggered, this,&MainWindow::fileSaveAs);
+
     updateActions();
+}
+
+
+void MainWindow::setCurrentIndex(const QModelIndex &index)
+{
+    if (index.isValid()) {
+        view->scrollTo(index);
+        view->setCurrentIndex(index);
+    }
+}
+
+
+bool MainWindow::fileSave()
+{
+
+
+    bool saved = false;
+    if (model->filename().isEmpty())
+    {    saved = fileSaveAs();
+    }
+    else
+    {
+        try
+        {
+            model->save();
+            setWindowModified(false);
+            setWindowTitle(tr("%1 - %2[*]")
+                    .arg(QApplication::applicationName())
+                    .arg(QFileInfo(model->filename()).fileName()));
+
+            statusBar()->showMessage(tr("Saved %1")
+                    .arg(model->filename()), 10000);
+            saved = true;
+        } catch (AQP::Error &error)
+        {
+            AQP::warning(this, tr("Error"),
+                    tr("Failed to save %1: %2").arg(model->filename())
+                    .arg(QString::fromUtf8(error.what())));
+        }
+    }
+    updateUi();
+    return saved;
+}
+
+
+bool MainWindow::fileSaveAs()
+{
+    QString filename = model->filename();
+    QString dir = filename.isEmpty() ? "."
+                                     : QFileInfo(filename).path();
+    filename = QFileDialog::getSaveFileName(this,
+            tr("%1 - Save As").arg(QApplication::applicationName()),
+            dir,
+            tr("%1 (*.tlg)").arg(QApplication::applicationName()));
+
+    if (filename.isEmpty())
+    {    return false;}
+
+    if (!filename.toLower().endsWith(".debolon"))
+    {    filename += ".debolon";}
+
+    model->setFilename(filename);
+    return fileSave();
+}
+
+
+bool MainWindow::okToClearData()
+{
+    if (isWindowModified())
+        return AQP::okToClearData(&MainWindow::fileSave, this,
+                tr("Unsaved changes"), tr("Save unsaved changes?"));
+    return true;
+}
+
+void MainWindow::fileNew()
+{
+    if (!okToClearData())
+    {return;}
+
+    model->clear();
+    model->setFilename(QString());
+
+    setWindowModified(false);
+
+    setWindowTitle(tr("%1 - Unnamed[*]")
+            .arg(QApplication::applicationName()));
+
+    updateUi();
+}
+
+
+void MainWindow::load(const QString &filename,
+                      const Path& path)
+{
+    QApplication::setOverrideCursor(QCursor(Qt::WaitCursor));
+    try {
+        model->load(filename);
+        if (!path.isEmpty()) {
+
+            setCurrentIndex(model->indexForPath(taskPath));
+
+        }
+        for (int column = 0; column < model->columnCount(); ++column)
+            treeView->resizeColumnToContents(column);
+        setDirty(false);
+        setWindowTitle(tr("%1 - %2[*]")
+                .arg(QApplication::applicationName())
+                .arg(QFileInfo(filename).fileName()));
+        statusBar()->showMessage(tr("Loaded %1").arg(filename),
+                                 StatusTimeout);
+    } catch (AQP::Error &error) {
+        AQP::warning(this, tr("Error"), tr("Failed to load %1: %2")
+                .arg(filename).arg(QString::fromUtf8(error.what())));
+    }
+    updateUi();
+    editHideOrShowDoneTasks(
+            editHideOrShowDoneTasksAction->isChecked());
+    treeView->setFocus();
+    QApplication::restoreOverrideCursor();
+}
+
+
+void MainWindow::fileOpen()
+{
+    if (!okToClearData())
+    {return;}
+
+    QString filename = model->filename();
+
+    QString dir(filename.isEmpty() ? QString(".")
+                : QFileInfo(filename).canonicalPath());
+
+    filename = QFileDialog::getOpenFileName(this,
+            tr("%1 - Open").arg(QApplication::applicationName()),
+            dir, tr("Timelogs (*.tlg)"));
+
+    if (!filename.isEmpty())
+        load(filename);
 }
 
 void MainWindow::undo()
