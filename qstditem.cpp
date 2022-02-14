@@ -1102,12 +1102,11 @@ bool QStdItem::operator<(const QStdItem &other) const
 void QStdItem::sortChildren(int column, Qt::SortOrder order)
 {
 
-   qDebug()<< "<QStdItem::sortChildren(int column,Qt::SortOrder )>";
+   scope_tagger t{"QStdItem::sortChildren(int column,Qt::SortOrder )"};
 
    Q_D(QStdItem);
    if ((column < 0) || (rowCount() == 0))
-   { qDebug()<< "</QStdItem::sortChildren(int column,Qt::SortOrder )>";
-       return;
+   {       return;
    }
 
    QList<QPersistentModelIndex> parents;
@@ -1121,8 +1120,7 @@ void QStdItem::sortChildren(int column, Qt::SortOrder order)
    if (d->model)
        emit d->model->layoutChanged(parents, QAbstractItemModel::VerticalSortHint);
 
-   qDebug()<< "</QStdItem::sortChildren(int column,Qt::SortOrder )>";
-}
+   }
 
 /*!
    Returns a copy of this item. The item's children are not copied.
@@ -1135,11 +1133,10 @@ void QStdItem::sortChildren(int column, Qt::SortOrder order)
 */
 QStdItem *QStdItem::clone() const
 {
-   qDebug()<< "<QStdItem::clone>";
+   scope_tagger t{"QStdItem::clone"};
 
    auto tmp{ new QStdItem(*this)};
 
-   qDebug()<< "</QStdItem::clone>";
    return tmp;
 }
 
@@ -1188,7 +1185,13 @@ void QStdItem::read(QDataStream &in)
    in >> d->values;
    qint32 flags;
    in >> flags;
-   setFlags(Qt::ItemFlags(flags));
+  // setFlags(Qt::ItemFlags(flags));
+
+   // no undoCommand recording here
+    d_func()->setFlags(Qt::ItemFlags(flags));
+    // it is better to use this method in QStdItemPrivate
+   // to be able to sometimes circumvent the undo framework
+   // this promises to increase performance compared to locking the undo_stack all the time
 
 }
 

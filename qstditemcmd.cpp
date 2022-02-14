@@ -967,13 +967,14 @@ m_reference()->validReference(m_reference());
         //  Q_D(QStdItem);
           QStdItemPrivate * const d = this_item()->d_func();
 
+// all this code should move to QStdItemPrivate::setData()
 
-          m_role = (m_role == Qt::EditRole) ? Qt::DisplayRole : m_role;
+  //        m_role = (m_role == Qt::EditRole) ? Qt::DisplayRole : m_role;
 
           const QList<int> roles((m_role == Qt::DisplayRole) ?
                                       QList<int>({Qt::DisplayRole, Qt::EditRole}) :
                                       QList<int>({m_role}));
-
+/*
           for (auto it = d->values.begin(); it != d->values.end(); ++it)
           {
               if ((*it).role == m_role)
@@ -1008,11 +1009,15 @@ m_reference()->validReference(m_reference());
 
           // 'this_item' had no data values set prior to this fcn call
           d->values.append(QStdItemData(m_role, m_value));
+*/
+          //m_value= old_value; // the old_value before the fcn call was an empty inValid QVariant, as is 'old_value'
+          m_value= d->setData(m_role,m_value);
+          // 'private Item ' implementation without recording by undo_stack
+          // 'setData' returns the old-value
 
-          m_value= old_value; // the old_value before the fcn call was an empty inValid QVariant, as is 'old_value'
 
-          if (d->model)
-              d->model->d_func()->itemChanged(this_item() , roles);
+     //     if (d->model)
+     //         d->model->d_func()->itemChanged(this_item() , roles);
       }
 
    void QStdItem::SetDataCmd::undo()

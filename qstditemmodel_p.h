@@ -124,6 +124,12 @@ public:
     m_uuid= next_free_uuid++;
     }
 
+
+    Qt::ItemFlags setFlags(Qt::ItemFlags f);
+
+    // sets the Data under the given role and returns the old value
+    QVariant setData(int m_role,const QVariant& m_value);
+
     unsigned long long uuid()const {return m_uuid;}
 
     // child items are indexed in row-major fashion

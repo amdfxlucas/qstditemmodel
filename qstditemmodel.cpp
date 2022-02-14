@@ -1019,9 +1019,16 @@ QVariant QStdItemModel::headerData(int section, Qt::Orientation orientation, int
     }
     QStdItem *headerItem = nullptr;
     if (orientation == Qt::Horizontal)
-        headerItem = d->columnHeaderItems.at(section);
+     { if(!d->columnHeaderItems.isEmpty())
+        {headerItem = d->columnHeaderItems.at(section);
+        }
+    }
     else if (orientation == Qt::Vertical)
-        headerItem = d->rowHeaderItems.at(section);
+    {   if(!d->rowHeaderItems.isEmpty())
+        {headerItem = d->rowHeaderItems.at(section);
+        }
+    }
+
     return headerItem ? headerItem->data(role)
         : QAbstractItemModel::headerData(section, orientation, role);
 }
@@ -1654,13 +1661,16 @@ void QStdItemModel::loadFromFile(const QString &filename)
 
   print_start();
 
+
+
   if (!filename.isEmpty())
-      setFilename( filename);
+  {setFilename( filename);}
 
   if (this->filename().isEmpty())
   {throw AQP::Error(tr("no filename specified"));}
 
-  clear();
+  clear(); // this clear the undo_stack as well
+  UndoStackLock lock{undo_stack()}; // a load is not something we want to be able to undo
 
   int row{0};
   int column{0};
@@ -1672,6 +1682,7 @@ void QStdItemModel::loadFromFile(const QString &filename)
     if(!file.open(QIODevice::ReadOnly))
     {
         // throw some very bad exception
+        throw AQP::Error("cannot open file");
     }
 
     // decode and insert
@@ -1688,6 +1699,35 @@ void QStdItemModel::loadFromFile(const QString &filename)
     int right = 0;
     QList<int> rows, columns;
     QList<QStdItem *> items;
+
+    /*
+    int cc,rc; // columHeaderItemCount, RowHeaderItemCount
+    QList<QStdItem*> colHeaderItems;
+    QList<QStdItem*> rowHeaderItems;
+
+
+    stream>>cc>>rc;
+    colHeaderItems.reserve(cc);
+    rowHeaderItems.reserve(rc);
+
+    // readColumnHeaderItems from stream
+    for(unsigned int i{0}; i<cc;++i)
+    {
+        QStdItem* item= d->createItem();
+        item->setModel(this); // lucas 14.02.22
+        stream>>*item;
+        colHeaderItems.append(item);
+    }
+
+    // read rowHeaderItems from stream
+    for(unsigned int i{0}; i<rc;++i)
+    {
+        QStdItem* item= d->createItem();
+        item->setModel(this); // lucas 14.02.22
+        stream>>*item;
+        rowHeaderItems.append(item);
+    }
+*/
 
     while (!stream.atEnd())
     {
@@ -1715,9 +1755,11 @@ void QStdItemModel::loadFromFile(const QString &filename)
 
     qDeleteAll(d->columnHeaderItems);
     d->columnHeaderItems.clear();
+//    d->columnHeaderItems=std::move(colHeaderItems);
 
     qDeleteAll(d->rowHeaderItems);
     d->rowHeaderItems.clear();
+//    d->rowHeaderItems=std::move(rowHeaderItems);
 
     print_end();
 
@@ -1802,9 +1844,31 @@ void QStdItemModel::saveToFile(const QString& filename)
             /*
     QList<QStdItem *> columnHeaderItems;
     QList<QStdItem *> rowHeaderItems;
-    QHash<int, QByteArray> roleNames;
+
 diese information von QStdItemModelPrivate muss auch serialisiert werden ! */
 
+    //        stream<< d_func()->columnHeaderItems.count() << d_func()->rowHeaderItems.count();
+/*
+            for(const auto& i :d_func()->columnHeaderItems)
+            {
+                if(i){
+                stream<<*i;
+                }else // the HeaderItems can be nullptr !
+                {
+                    stream<<*new char[sizeof(QStdItem)];
+                }
+            }
+
+            for(const auto& i :d_func()->rowHeaderItems)
+            {
+                if(i){
+                stream<<*i;
+                }else
+                {
+                    stream<<*new char[sizeof(QStdItem)];
+                }
+            }
+*/
 
     //stream everything recursively
     while (!stack.isEmpty())
