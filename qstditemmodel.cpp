@@ -66,6 +66,8 @@
  #include <QFile>
 #include <QSaveFile>
 
+#include "aqp.hpp"
+
 
 static inline QString qStandardItemModelDataListMimeType()
 {
@@ -1652,6 +1654,11 @@ void QStdItemModel::loadFromFile(const QString &filename)
 
   print_start();
 
+  if (!filename.isEmpty())
+      setFilename( filename);
+
+  if (this->filename().isEmpty())
+  {throw AQP::Error(tr("no filename specified"));}
 
   clear();
 
@@ -1699,92 +1706,35 @@ void QStdItemModel::loadFromFile(const QString &filename)
         right = qMax(c, right);
     }
 
-    // insert the dragged items into the table, use a bit array to avoid overwriting items,
-    // since items from different tables can have the same row and column
-    int dragRowCount = 0;
-    int dragColumnCount = right - left + 1;
+ beginResetModel();
 
-    // Compute the number of continuous rows upon insertion and modify the rows to match
-    QList<int> rowsToInsert(bottom + 1);
+    d->root.reset(items.takeLast());
+    invisibleRootItem()->setFlags(Qt::ItemIsDropEnabled             );
 
-    for (int i = 0; i < rows.count(); ++i)
-        rowsToInsert[rows.at(i)] = 1;
 
-    for (int i = 0; i < rowsToInsert.count(); ++i)
-    {
-        if (rowsToInsert.at(i) == 1)
-        {
-            rowsToInsert[i] = dragRowCount;
-            ++dragRowCount;
-        }
-    }
-    for (int i = 0; i < rows.count(); ++i)
-        rows[i] = top + rowsToInsert.at(rows.at(i));
 
-    QBitArray isWrittenTo(dragRowCount * dragColumnCount);
+    qDeleteAll(d->columnHeaderItems);
+    d->columnHeaderItems.clear();
 
-    // make space in the table for the dropped data
-    int colCount = columnCount(parent);
-
-    if (colCount < dragColumnCount + column)
-    {
-        insertColumns(colCount, dragColumnCount + column - colCount, parent);
-        colCount = columnCount(parent);
-    }
-
-    insertRows(row, dragRowCount, parent);
-
-    row = qMax(0, row);
-    column = qMax(0, column);
-
-    QStdItem *parentItem = itemFromIndex (parent);
-
-    if (!parentItem)
-    {    parentItem = invisibleRootItem();}
-
-    QList<QPersistentModelIndex> newIndexes(items.size());
-    // set the data in the table
-    for (int j = 0; j < items.size(); ++j)
-    {
-        int relativeRow = rows.at(j) - top;
-        int relativeColumn = columns.at(j) - left;
-        int destinationRow = relativeRow + row;
-        int destinationColumn = relativeColumn + column;
-        int flat = (relativeRow * dragColumnCount) + relativeColumn;
-        // if the item was already written to, or we just can't fit it in the table, create a new row
-        if (destinationColumn >= colCount || isWrittenTo.testBit(flat))
-        {
-            destinationColumn = qBound(column, destinationColumn, colCount - 1);
-            destinationRow = row + dragRowCount;
-            insertRows(row + dragRowCount, 1, parent);
-            flat = (dragRowCount * dragColumnCount) + relativeColumn;
-            isWrittenTo.resize(++dragRowCount * dragColumnCount);
-        }
-        if (!isWrittenTo.testBit(flat))
-        {
-            newIndexes[j] = index(destinationRow, destinationColumn, parentItem->index());
-            isWrittenTo.setBit(flat);
-        }
-    }
-
-    for(int k = 0; k < newIndexes.size(); k++)
-    {
-        if (newIndexes.at(k).isValid())
-        {
-            parentItem->setChild(newIndexes.at(k).row(), newIndexes.at(k).column(), items.at(k));
-        } else {
-            delete items.at(k);
-        }
-    }
+    qDeleteAll(d->rowHeaderItems);
+    d->rowHeaderItems.clear();
 
     print_end();
 
+
+
+    endResetModel();
 }
 
-void QStdItemModel::saveToFile(const QString& filename) const
+void QStdItemModel::saveToFile(const QString& filename)
 { scope_tagger t{ "QStdItemModel::saveToFile"};
 
+    if (!filename.isEmpty())
+        d_func()->m_filename = filename;
 
+    if (d_func()->m_filename.isEmpty())
+    {  throw AQP::Error(tr("no filename specified"));
+    }
 
 
     QByteArray encoded;
@@ -1847,6 +1797,14 @@ void QStdItemModel::saveToFile(const QString& filename) const
     for (QStdItem *item : qAsConst(itemsSet))
         stack.push(item);
 */
+
+
+            /*
+    QList<QStdItem *> columnHeaderItems;
+    QList<QStdItem *> rowHeaderItems;
+    QHash<int, QByteArray> roleNames;
+diese information von QStdItemModelPrivate muss auch serialisiert werden ! */
+
 
     //stream everything recursively
     while (!stack.isEmpty())

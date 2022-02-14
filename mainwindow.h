@@ -68,7 +68,7 @@ private:
 public:
     MainWindow(QWidget *parent = nullptr);
 
-    void load(const QString &filename,    const Path& path);
+    void load(const QString &filename,    const Path& path =QList<PathItem>() );
     // loads a model from file and restores the currentIndex in the view
 
 public slots:
@@ -92,7 +92,7 @@ private slots:
     bool fileSave();
     bool fileSaveAs();
     void fileOpen();
-
+private:
     QStdItemModel* model;
 };
 

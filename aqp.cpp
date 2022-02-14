@@ -129,8 +129,10 @@ bool question(QWidget *parent, const QString &title,
 }
 
 
-bool okToDelete(QWidget *parent, const QString &title,
-                const QString &text, const QString &detailedText)
+bool okToDelete(QWidget *parent,
+                const QString &title,
+                const QString &text,
+                const QString &detailedText)
 {
 #if QT_VERSION >= 0x040600
     QScopedPointer<QMessageBox> messageBox(new QMessageBox(parent));
@@ -155,17 +157,6 @@ bool okToDelete(QWidget *parent, const QString &title,
     return messageBox->clickedButton() == deleteButton;
 }
 
-
-void hoursMinutesSecondsForMSec(const int msec, int *hours,
-                                int *minutes, int *seconds)
-{
-    if (hours)
-        *hours = (msec / (60 * 60 * 1000)) % 60;
-    if (minutes)
-        *minutes = (msec / (60 * 1000)) % 60;
-    if (seconds)
-        *seconds = (msec / 1000) % 60;
-}
 
 
 QString applicationPathOf(const QString &path)

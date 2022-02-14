@@ -118,6 +118,8 @@ public:
     void save();
     void load();
 
+    void saveToFile(const QString& filename= QString()) ;
+    void loadFromFile(const QString& filename=QString()  );
 
 
 
@@ -224,8 +226,7 @@ Q_SIGNALS:
 
 protected:
     QStdItemModel(QStdItemModelPrivate &dd, QObject *parent = nullptr);
-    void saveToFile(const QString& filename) const;
-    void loadFromFile(const QString& filename );
+
 private:
 
 

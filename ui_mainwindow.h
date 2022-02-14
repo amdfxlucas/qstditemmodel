@@ -69,9 +69,16 @@ public:
 
 
          saveAction= new QAction(MainWindow);
+         saveAction->setText(QMainWindow::tr("save"));
+
          openAction = new QAction(MainWindow);
+         openAction->setText(QMainWindow::tr("open"));
+
          newAction= new QAction(MainWindow);
+         newAction->setText(QMainWindow::tr("new"));
+
         saveAsAction = new QAction(MainWindow);
+        saveAsAction->setText(QMainWindow::tr("save as"));
 
         exitAction = new QAction(MainWindow);
         exitAction->setObjectName(QString::fromUtf8("exitAction"));

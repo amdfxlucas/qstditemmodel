@@ -65,8 +65,10 @@ bool okToDelete(QWidget *parent, const QString &title,
         const QString &text, const QString &detailedText=QString());
 
 template<typename T>
-bool okToClearData(bool (T::*saveData)(), T *parent,
-        const QString &title, const QString &text,
+bool okToClearData(bool (T::*saveData)(),
+                   T *parent,
+        const QString &title,
+                   const QString &text,
         const QString &detailedText=QString())
 {
     Q_ASSERT(saveData && parent);
@@ -96,15 +98,6 @@ bool okToClearData(bool (T::*saveData)(), T *parent,
     return true;
 }
 
-const int MSecPerSecond = 1000;
-
-void hoursMinutesSecondsForMSec(const int msec, int *hours,
-                                int *minutes, int *seconds);
-
-inline qreal radiansFromDegrees(qreal degrees)
-    { return degrees * M_PI / 180.0; }
-inline qreal degreesFromRadians(qreal radians)
-    { return radians * 180.0 / M_PI; }
 
 QString applicationPathOf(const QString &path=QString());
 QString filenameFilter(const QString &name,

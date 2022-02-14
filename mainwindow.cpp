@@ -147,7 +147,7 @@ bool MainWindow::fileSave()
                     .arg(QString::fromUtf8(error.what())));
         }
     }
-    updateUi();
+    updateActions();
     return saved;
 }
 
@@ -160,7 +160,7 @@ bool MainWindow::fileSaveAs()
     filename = QFileDialog::getSaveFileName(this,
             tr("%1 - Save As").arg(QApplication::applicationName()),
             dir,
-            tr("%1 (*.tlg)").arg(QApplication::applicationName()));
+            tr("%1 (*.debolon)").arg(QApplication::applicationName()));
 
     if (filename.isEmpty())
     {    return false;}
@@ -169,6 +169,7 @@ bool MainWindow::fileSaveAs()
     {    filename += ".debolon";}
 
     model->setFilename(filename);
+
     return fileSave();
 }
 
@@ -194,37 +195,46 @@ void MainWindow::fileNew()
     setWindowTitle(tr("%1 - Unnamed[*]")
             .arg(QApplication::applicationName()));
 
-    updateUi();
+    updateActions();
 }
 
 
-void MainWindow::load(const QString &filename,
+
+
+void MainWindow::load(const QString &_filename,
                       const Path& path)
 {
     QApplication::setOverrideCursor(QCursor(Qt::WaitCursor));
-    try {
-        model->load(filename);
-        if (!path.isEmpty()) {
+    try
+    {
+        model->loadFromFile(_filename);
+        if (!path.isEmpty())
+        {
 
-            setCurrentIndex(model->indexForPath(taskPath));
+            setCurrentIndex(model->pathToIndex(path));
 
         }
+
         for (int column = 0; column < model->columnCount(); ++column)
-            treeView->resizeColumnToContents(column);
-        setDirty(false);
+           {view->resizeColumnToContents(column);}
+
+        setWindowModified(false);
+
         setWindowTitle(tr("%1 - %2[*]")
                 .arg(QApplication::applicationName())
-                .arg(QFileInfo(filename).fileName()));
-        statusBar()->showMessage(tr("Loaded %1").arg(filename),
-                                 StatusTimeout);
-    } catch (AQP::Error &error) {
+                .arg(QFileInfo(_filename).fileName()));
+
+        statusBar()->showMessage(tr("Loaded %1").arg(_filename),
+                                 10000);
+    } catch (AQP::Error &error)
+    {
         AQP::warning(this, tr("Error"), tr("Failed to load %1: %2")
-                .arg(filename).arg(QString::fromUtf8(error.what())));
+                .arg(_filename).arg(QString::fromUtf8(error.what())));
     }
-    updateUi();
-    editHideOrShowDoneTasks(
-            editHideOrShowDoneTasksAction->isChecked());
-    treeView->setFocus();
+
+    updateActions();
+
+    view->setFocus();
     QApplication::restoreOverrideCursor();
 }
 
@@ -241,7 +251,7 @@ void MainWindow::fileOpen()
 
     filename = QFileDialog::getOpenFileName(this,
             tr("%1 - Open").arg(QApplication::applicationName()),
-            dir, tr("Timelogs (*.tlg)"));
+            dir, tr("production schedules (*.debolon)"));
 
     if (!filename.isEmpty())
         load(filename);
@@ -390,7 +400,7 @@ void MainWindow::removeRow()
 
 void MainWindow::update_undo()
 {
-       QStdItemModel *model = static_cast<QStdItemModel*>(view->model());
+    //   QStdItemModel *model = static_cast<QStdItemModel*>(view->model());
 
     auto stack{model->undo_stack()};
 
@@ -429,14 +439,36 @@ void MainWindow::updateActions()
     insertRowAction->setEnabled(hasCurrent);
     insertColumnAction->setEnabled(hasCurrent);
 
-    if (hasCurrent) {
+    if (hasCurrent)
+    {
         view->closePersistentEditor(view->selectionModel()->currentIndex());
 
         const int row = view->selectionModel()->currentIndex().row();
         const int column = view->selectionModel()->currentIndex().column();
+
         if (view->selectionModel()->currentIndex().parent().isValid())
-            statusBar()->showMessage(tr("Position: (%1,%2)").arg(row).arg(column));
+        {    statusBar()->showMessage(tr("Position: (%1,%2)").arg(row).arg(column));
+        }
         else
+        {
             statusBar()->showMessage(tr("Position: (%1,%2) in top level").arg(row).arg(column));
+        }
     }
+
+
+    saveAction->setEnabled(isWindowModified());
+    int rows = model->rowCount();
+    saveAsAction->setEnabled(isWindowModified() || rows);
+
+
+
+ /*   foreach (QAction *action, QList<QAction*>() << editDeleteAction
+            << editMoveUpAction << editMoveDownAction << editCutAction
+            << editPromoteAction << editDemoteAction)
+
+        action->setEnabled(enable);
+        */
+
+    // editPasteAction->setEnabled(model->hasCutItem());
+
 }

@@ -1,7 +1,7 @@
 QT += widgets
 requires(qtConfig(treeview))
 CONFIG += c++20
-INCLUDEPATH+= "includes"
+
 INCLUDEPATH+= "C:\Qt\6.1.2\msvc2019_64\include\QtCore\6.1.2"
 INCLUDEPATH+="C:\Qt\6.1.2\msvc2019_64\include\QtWidgets\6.1.2"
 INCLUDEPATH+="C:\Qt\6.1.2\msvc2019_64\include\QtGui\6.1.2"
@@ -17,7 +17,7 @@ INCLUDEPATH += "C:\Qt\6.1.2\msvc2019_64\include\QtGui\6.1.2\QtGui"
 # FORMS       = mainwindow.ui
 HEADERS     = mainwindow.h \
     aqp.hpp \
-    includes/qundogroup.h \
+    qundogroup.h \
     myqtreeview.h \
     path.h \
     qstditem.h \
@@ -29,10 +29,10 @@ HEADERS     = mainwindow.h \
     ui_mainwindow.h \
     undostack.h \
     undostack_p.h
-RESOURCES   = editabletreemodel.qrc
+#RESOURCES   = editabletreemodel.qrc
 SOURCES     = mainwindow.cpp \
               aqp.cpp \
-              includes/qundogroup.cpp \
+              qundogroup.cpp \
               main.cpp \
               myqtreeview.cpp \
               qstditem.cpp \
