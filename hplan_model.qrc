@@ -1,0 +1,14 @@
+<RCC>
+    <qresource prefix="/images">
+        <file>default.txt</file>
+    </qresource>
+    <qresource prefix="/image">
+        <file>altro_debolon.ico</file>
+        <file>altro-debolon-squarelogo.ico</file>
+        <file>altro_debolon.png</file>
+        <file>altro_debolon05.png</file>
+        <file>altro_debolon025.png</file>
+        <file>05altro.png</file>
+        <file>025altro.png</file>
+    </qresource>
+</RCC>
