@@ -42,7 +42,7 @@
 
 
 #include "QtGui/private/qtguiglobal_p.h"
-#include "qobject_p.h"
+#include "QtCore/private/qobject_p.h"
 #include <QtCore/qlist.h>
 #include <QtCore/qstring.h>
 #if QT_CONFIG(action)
