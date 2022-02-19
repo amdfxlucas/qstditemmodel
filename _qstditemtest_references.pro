@@ -2,17 +2,20 @@ QT += widgets
 requires(qtConfig(treeview))
 CONFIG += c++20
 
-INCLUDEPATH+= "C:\Qt\6.1.2\msvc2019_64\include\QtCore\6.1.2"
-INCLUDEPATH+="C:\Qt\6.1.2\msvc2019_64\include\QtWidgets\6.1.2"
-INCLUDEPATH+="C:\Qt\6.1.2\msvc2019_64\include\QtGui\6.1.2"
-INCLUDEPATH+="C:\Qt\6.1.2\msvc2019_64\include\QtGui\6.1.2"
+#INCLUDEPATH+= "C:\Qt\6.1.2\msvc2019_64\include\QtCore\6.1.2"
+#INCLUDEPATH+="C:\Qt\6.1.2\msvc2019_64\include\QtWidgets\6.1.2"
+#INCLUDEPATH+="C:\Qt\6.1.2\msvc2019_64\include\QtGui\6.1.2"
+#INCLUDEPATH+="C:\Qt\6.1.2\msvc2019_64\include\QtGui\6.1.2"
 
-INCLUDEPATH +="C:\Qt\6.1.2\msvc2019_64\include\QtWidgets\6.1.2\QtWidgets\private"
-INCLUDEPATH +="C:\Qt\6.1.2\msvc2019_64\include\QtWidgets\6.1.2\QtWidgets"
-INCLUDEPATH +="C:\Qt\6.1.2\msvc2019_64\include\QtCore\6.1.2\QtCore\private"
-INCLUDEPATH +="C:\Qt\6.1.2\msvc2019_64\include\QtCore\6.1.2\QtCore"
-INCLUDEPATH += "C:\Qt\6.1.2\msvc2019_64\include\QtGui\6.1.2\QtGui\qpa"
-INCLUDEPATH += "C:\Qt\6.1.2\msvc2019_64\include\QtGui\6.1.2\QtGui"
+#INCLUDEPATH +="C:\Qt\6.1.2\msvc2019_64\include\QtWidgets\6.1.2\QtWidgets\private"
+#INCLUDEPATH +="C:\Qt\6.1.2\msvc2019_64\include\QtWidgets\6.1.2\QtWidgets"
+#INCLUDEPATH +="C:\Qt\6.1.2\msvc2019_64\include\QtCore\6.1.2\QtCore\private"
+#INCLUDEPATH +="C:\Qt\6.1.2\msvc2019_64\include\QtCore\6.1.2\QtCore"
+#INCLUDEPATH += "C:\Qt\6.1.2\msvc2019_64\include\QtGui\6.1.2\QtGui\qpa"
+#INCLUDEPATH += "C:\Qt\6.1.2\msvc2019_64\include\QtGui\6.1.2\QtGui"
+
+INCLUDEPATH+= "/home/lucas/Qt/6.1.3/gcc_64/include/QtGui/6.1.3"
+INCLUDEPATH+="/home/lucas/Qt/6.1.3/gcc_64/include/QtCore/6.1.3"
 
 # FORMS       = mainwindow.ui
 HEADERS     = mainwindow.h \
@@ -32,6 +35,7 @@ HEADERS     = mainwindow.h \
 #RESOURCES   = editabletreemodel.qrc
 SOURCES     = mainwindow.cpp \
               aqp.cpp \
+              qstditemmodel_commands.cpp \
               qundogroup.cpp \
               main.cpp \
               myqtreeview.cpp \
