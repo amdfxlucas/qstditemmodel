@@ -132,6 +132,48 @@ QStdItemModel::~QStdItemModel()
     d->root.reset();
 }
 
+Path QStdItemModel::parentPath(const Path& p )
+{
+    if(p.length() >=2)
+    {return Path(p.cbegin(),p.cend()-1);    }
+    else
+    {
+        return Path()<<PathItem(-1,-1);
+    }
+}
+
+
+QModelIndex QStdItemModel::cut(const QModelIndex &index)
+{
+
+    undo_stack()->beginMacro("QStdItemModel::cut");
+
+    auto cut_cmd = new CutItemCmd(this,index) ;
+    undo_stack()->push(cut_cmd);
+
+ //   auto idx{undo_stack()->index() };
+   // const QStdItemModel::QStdItemModelCmd* cmd {static_cast<const QStdItemModel::QStdItemModelCmd*>(undo_stack()->command(idx) ) };
+
+    if(cut_cmd)
+    {
+        return cut_cmd->returnValue().value<QModelIndex>();
+    }
+
+
+    undo_stack()->endMacro();
+
+}
+
+bool QStdItemModel::hasCutItem() const
+{
+    return d_func()->hasCutItem();
+}
+
+QModelIndex QStdItemModel::paste(const QModelIndex &index)
+{
+
+}
+
 /*!
     Sets the item role names to \a roleNames.
 */
@@ -410,70 +452,6 @@ QStdItem *QStdItemModel::invisibleRootItem() const
     setVerticalHeaderItem()
 */
 
-void QStdItemModel::SetHHeaderItemCmd::undo()
-{
-impl(false);
-}
-
-void QStdItemModel::SetHHeaderItemCmd::impl(bool redo)
-{
-      UndoStackLock lock{_this_model_->undo_stack()}; // RAII class
-
-    QStdItemModelPrivate* d = _this_model_->d_func()           ;
-
-    if (m_column < 0)
-        return;
-
-    //if (_this_model_->columnCount() <= m_column)
-
-  //  if (prev_col_count <= m_column)
-    if(change_col_count)
-    {   if( redo )
-        {_this_model_->setColumnCount(m_column + 1);}
-        else
-        {
-            _this_model_->setColumnCount(prev_col_count );
-        }
-    }
-
-    QStdItem *oldItem = d->columnHeaderItems.at(m_column);
-
-    if (m_item == oldItem)
-    {
-
-        return;
-    }
-
-    if (m_item)
-    {
-        if (m_item->model() == nullptr)
-        {
-            m_item->setModel(_this_model_);
-        } else
-        {
-            qWarning("QStdItem::setHorizontalHeaderItem: Ignoring duplicate insertion of item %p",
-                     m_item);
-
-
-            return;
-        }
-    }
-
-    if (oldItem)
-        oldItem->setModel(nullptr);
-    //delete oldItem;
-
-
-    d->columnHeaderItems.replace(m_column, m_item);
-    m_item= oldItem;
-    emit _this_model_->headerDataChanged(Qt::Horizontal, m_column, m_column);
-}
-
-void QStdItemModel::SetHHeaderItemCmd::redo()
-{
-
-    impl(true);
-}
 
 void QStdItemModel::setHorizontalHeaderItem(int column, QStdItem *item)
 {
@@ -1635,7 +1613,13 @@ Path QStdItemModel::pathFromIndex(const QModelIndex &index)
 
 QModelIndex QStdItemModel::pathToIndex(const Path &path)
 {
-   QModelIndex iter;
+    UndoStackLock lck{undo_stack()};
+
+     QModelIndex iter;
+    //QModelIndex iter{-1,-1,invisibleRootItem(),this};
+    // auto iter{createIndex(-1,-1,invisibleRootItem() )};
+
+
    for (int i=0;i<path.size();i++)
    {
        iter = this->index(path[i].first, path[i].second, iter);

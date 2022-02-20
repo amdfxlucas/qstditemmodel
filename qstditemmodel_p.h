@@ -184,8 +184,11 @@ public:
 
     QStdItem *q_ptr;
 
+    // every Item has a globally unique Identifier
     inline static unsigned long long next_free_uuid{0};
     unsigned long long m_uuid;
+
+
 
     mutable int lastKnownIndex; // this is a cached value
 };
@@ -239,6 +242,12 @@ public:
                             const QModelIndex &bottomRight);
 
     void decodeDataRecursive(QDataStream &stream, QStdItem *item);
+
+    bool hasCutItem()const{return cut_item;}
+
+
+    QStdItem* cut_item;
+
 
     QString m_filename;
     QList<QStdItem *> columnHeaderItems;

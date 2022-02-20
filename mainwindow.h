@@ -88,6 +88,9 @@ private slots:
     void undo();
     void redo();
 
+    void cut();
+    void paste();
+
     void fileNew();
     bool fileSave();
     bool fileSaveAs();
