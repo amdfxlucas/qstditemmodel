@@ -343,10 +343,17 @@ void MainWindow::insertRow()
     const QModelIndex index = view->selectionModel()->currentIndex();
     QStdItemModel *model = static_cast<QStdItemModel*>(view->model());
 
+
     model->undo_stack()->beginMacro("MainWindow::insertRow");
 
+    if(index.row()+1 > model->rowCount())
+    {
+        return;
+    }
+
     if (!model->insertRow(index.row()+1, index.parent()))
-    {    return;}
+    {    return;
+    }
 
     updateActions();
 

@@ -340,7 +340,7 @@ QStdItem::RemoveRowsCmd::~RemoveRowsCmd()
        d->rows += m_count;
 
         if (d->model)
-        {    d->model->d_func()->rowsInserted(item, m_row-1, m_count);
+        {    d->model->d_func()->rowsInserted(item, (m_row>1) ? m_row-1 : 0, m_count);
         }
 
 
