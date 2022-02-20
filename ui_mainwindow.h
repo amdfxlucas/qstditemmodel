@@ -37,6 +37,9 @@ public:
     QAction* newAction;
     QAction* saveAsAction;
 
+    QAction* cutItemAction;
+    QAction* pasteItemAction;
+
     QAction *insertRowAction;
     QAction *removeRowAction;
     QAction *insertColumnAction;
@@ -67,6 +70,11 @@ public:
         redo_action->setObjectName(QString::fromUtf8("redoAction"));
 
 
+        cutItemAction = new QAction(MainWindow);
+        cutItemAction->setText("cut")        ;
+
+        pasteItemAction= new QAction(MainWindow);
+        pasteItemAction->setText("paste");
 
          saveAction= new QAction(MainWindow);
          saveAction->setText(QMainWindow::tr("save"));
@@ -158,6 +166,9 @@ public:
         actionsMenu->addSeparator();
         actionsMenu->addAction(undo_action);
         actionsMenu->addAction(redo_action);
+        actionsMenu->addSeparator();
+        actionsMenu->addAction(cutItemAction);
+        actionsMenu->addAction(pasteItemAction);
 
         retranslateUi(MainWindow);
 
