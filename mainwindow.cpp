@@ -65,14 +65,8 @@ MainWindow::MainWindow(QWidget *parent)
 {
     setupUi(this);
 
-  //  const QStringList headers({tr("Title"), tr("Description")});
 
-  //  QFile file(":/default.txt");
-  //  file.open(QIODevice::ReadOnly);
-
-  //  TreeModel *model = new TreeModel(headers, file.readAll());
      model = new QStdItemModel(this);
-  //  file.close();
 
      undo_view->setStack(reinterpret_cast<QUndoStack*>(model->undo_stack()) );
       addDockWidget(Qt::RightDockWidgetArea,dock);
@@ -80,7 +74,8 @@ MainWindow::MainWindow(QWidget *parent)
     view->setModel(model);
     view->setDefaultDropAction(Qt::MoveAction);
     view->setDragEnabled(true);
-    view->setDragDropMode(QAbstractItemView::DragDrop);
+  //  view->setDragDropMode(QAbstractItemView::DragDrop);
+      view->setDragDropMode(QAbstractItemView::InternalMove);
 
     for (int column = 0; column < model->columnCount(); ++column)
         view->resizeColumnToContents(column);
@@ -287,14 +282,16 @@ void MainWindow::insertChild()
 
     if (model->columnCount(index) == 0)
     {
-        if (!model->insertColumn(0, index))
+        if (! (model->insertColumn(0, index)) )
         {
             model->undo_stack()->endMacro();
             return;
         }
     }
 
-    if (!model->insertRow(0, index))
+
+
+    if(!(model->insertRow(0, index) ) )
     {       model->undo_stack()->endMacro();
         return;
     }

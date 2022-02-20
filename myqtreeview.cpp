@@ -70,7 +70,11 @@ void MyQTreeView::mouseMoveEvent(QMouseEvent *event)
     event->accept();
 
     _model->undo_stack()->beginMacro("DragDrop");
+    qDebug()<< "<begin_macro DragDrop>";
+
     startDrag(Qt::MoveAction);
+
+    qDebug().noquote() << "</begin_macro DragDrop>";
     _model->undo_stack()->endMacro();
 }
 
