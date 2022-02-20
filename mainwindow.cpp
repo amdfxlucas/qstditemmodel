@@ -365,7 +365,9 @@ void MainWindow::insertRow()
     const QModelIndex index = view->selectionModel()->currentIndex();
     QStdItemModel *model = static_cast<QStdItemModel*>(view->model());
 
-    if(index.row()+1 >= model->rowCount())
+    qDebug() << model->rowCount();
+
+    if(index.row()+1 > model->rowCount())
     {
         return;
     }
