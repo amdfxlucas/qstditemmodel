@@ -68,6 +68,22 @@
 
 #include "aqp.hpp"
 
+QUndoCommand* lastChildofCmd(const QUndoCommand* cmd)
+{
+    //  for(unsigned int i{0}; i < cmd->childCount();++i )
+    // {          }
+
+   const QUndoCommand* child;
+
+    child = cmd->child(cmd->childCount()-1);
+
+    if(child->childCount()>0)
+    {return lastChildofCmd(child);
+    }
+    else
+    {return const_cast<QUndoCommand*>(child);
+    }
+}
 
 static inline QString qStandardItemModelDataListMimeType()
 {
@@ -1050,16 +1066,26 @@ bool QStdItemModel::insertColumns(int column, int count, const QModelIndex &pare
 
                 item->insertColumns(column, count);
 
-         undo_stack()->endMacro();
-           qDebug().noquote()<< "</QStdItemModel::undo_stack::beginMacro text=\"" + text+ "\">";
-
          auto index{undo_stack()->index() };
-        const QStdItem::StdItemCmd* cmd {static_cast<const QStdItem::StdItemCmd*>(undo_stack()->command(index) ) };
+        const QStdItem::StdItemCmd* cmd {static_cast<const QStdItem::StdItemCmd*>( lastChildofCmd( undo_stack()->command(index) ) ) };
+
+        undo_stack()->endMacro();
+          qDebug().noquote()<< "</QStdItemModel::undo_stack::beginMacro text=\"" + text+ "\">";
+
+        bool ret_val{false};
 
          if(cmd)
          {
-             return cmd->redoSuccessFlag();
+             ret_val= cmd->redoSuccessFlag();
+            // qDebug()<< ret_val;
+             return ret_val;
          }
+
+
+
+
+
+
 
          return true;
 
@@ -1090,11 +1116,13 @@ bool QStdItemModel::insertRows(int row, int count, const QModelIndex &parent)
 
             item->insertRows(row,count);
 
-    undo_stack()->endMacro();
-      qDebug().noquote() << "</QStdItemModel::undo_stack::beginMacro text=\"" + text+ "\">";
-
     auto index{undo_stack()->index() };
-   const QStdItem::StdItemCmd* cmd {static_cast<const QStdItem::StdItemCmd*>(undo_stack()->command(index) ) };
+   const QStdItem::StdItemCmd* cmd {static_cast<const QStdItem::StdItemCmd*>( lastChildofCmd(undo_stack()->command(index) ) )};
+
+
+   undo_stack()->endMacro();
+     qDebug().noquote() << "</QStdItemModel::undo_stack::beginMacro text=\"" + text+ "\">";
+
 
     if(cmd)
     {
