@@ -63,7 +63,7 @@ QT_BEGIN_NAMESPACE
 #include "qstditem.h"
 
 
-//class QStdItemModelPrivate;
+class QStdItemModelPrivate;
 
 
 
