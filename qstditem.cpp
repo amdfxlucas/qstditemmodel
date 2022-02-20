@@ -750,7 +750,10 @@ void QStdItem::insertColumns(int column, int count)
 
    if(model())
    {
-       model()->undo_stack()->push(new InsertColumnCmd(this,column,count) );}
+       auto cmd {new InsertColumnCmd(this,column,count)};
+
+
+       model()->undo_stack()->push( cmd);}
    else
    {
        auto ptr= std::make_shared<InsertColumnCmd>(this,column,count);
