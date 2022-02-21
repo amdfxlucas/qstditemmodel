@@ -1,8 +1,11 @@
 #ifndef MYQTREEVIEW_H
 #define MYQTREEVIEW_H
 #include <QTreeView>
+#include "import_export.h"
 
-class MyQTreeView : public QTreeView
+
+class TEST_LIB_EXPORT  MyQTreeView
+        : public QTreeView
 {
 public:
     MyQTreeView(QWidget* parent = nullptr);

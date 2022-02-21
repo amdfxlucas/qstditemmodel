@@ -39,6 +39,7 @@
 
 #ifndef UNDOSTACK_H
 #define UNDOSTACK_H
+#include "import_export.h"
 
 #include <QtGui/qtguiglobal.h>
 #include <QtCore/qobject.h>
@@ -55,7 +56,7 @@ class QAction;
 class QUndoCommandPrivate;
 class UndoStackPrivate;
 
-class  QUndoCommand
+class TEST_LIB_EXPORT QUndoCommand
 {
     QUndoCommandPrivate *d;
 
@@ -87,7 +88,7 @@ private:
 
 #if QT_CONFIG(undostack)
 
-class  UndoStack
+class TEST_LIB_EXPORT UndoStack
         : public QObject
 {
     Q_OBJECT
@@ -162,7 +163,7 @@ private:
   //  bool push_lock{false}; // moved to undostack_private to not break binary compatibility
 };
 
-class UndoStackLock
+class TEST_LIB_EXPORT UndoStackLock
 {
 private:
     bool prev_state;

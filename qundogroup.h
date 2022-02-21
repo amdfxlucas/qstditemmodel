@@ -39,6 +39,7 @@
 
 #ifndef QUNDOGROUP_H
 #define QUNDOGROUP_H
+#include "import_export.h"
 
 #include <QtGui/qtguiglobal.h>
 #include <QtCore/qobject.h>
@@ -52,7 +53,8 @@ class QUndoGroupPrivate;
 class UndoStack;
 class QAction;
 
-class  QUndoGroup : public QObject
+class  TEST_LIB_EXPORT QUndoGroup
+        : public QObject
 {
     Q_OBJECT
     Q_DECLARE_PRIVATE(QUndoGroup)
