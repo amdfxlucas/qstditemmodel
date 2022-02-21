@@ -57,8 +57,8 @@ private:
     //which item is referenced
     unsigned long long item_uuid;
     QModelIndex m_index;
-    QStdItem* m_item;
-    QStdItemModel* m_model;
+    QStdItem* m_item{nullptr};
+    QStdItemModel* m_model{nullptr};
     Path m_path;
     friend class reference_controller;
     friend class QStdItem::StdItemCmd;

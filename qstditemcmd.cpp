@@ -20,7 +20,7 @@
 #include "qstditemcommands.h"
 
 
-Path QStdItem::StdItemCmd::this_path()
+Path QStdItem::StdItemCmd::this_path()const
 {
     return m_ref->m_path;
 }
@@ -32,6 +32,25 @@ QStdItem::StdItemCmd::~StdItemCmd()
     m_reference()->invalidReference(m_reference());
 }
 
+constexpr UndoStack* QStdItem::StdItemCmd::get_stack()const
+{
+    UndoStack* ptr_stack{nullptr};
+    const auto ptr_model{this_model()};
+
+    //  && reinterpret_cast<QStdItemModelPrivate*>(ptr_model->d_ptr.get())->root.data()!=this_item()
+
+    if(ptr_model
+            )
+    {
+
+        auto ptr{ptr_model->m_stack};
+        if(ptr)
+        {
+        ptr_stack=ptr;
+        }
+    }
+    return ptr_stack;
+}
 
 QStdItem::StdItemCmd::StdItemCmd(QStdItem* it,QUndoCommand* parent)
     : QUndoCommand(parent)
@@ -40,16 +59,17 @@ QStdItem::StdItemCmd::StdItemCmd(QStdItem* it,QUndoCommand* parent)
 }
 
 
-QStdItem* QStdItem::StdItemCmd::this_item()
+constexpr QStdItem* QStdItem::StdItemCmd::this_item()const
 {
     return m_ref->m_item;
 }
 
-QModelIndex QStdItem::StdItemCmd::this_index()
+QModelIndex QStdItem::StdItemCmd::this_index()const
 {
     return m_ref->m_index;
 }
-QStdItemModel* QStdItem::StdItemCmd::this_model()
+
+constexpr QStdItemModel* QStdItem::StdItemCmd::this_model()const
 {
     return m_ref->m_model;
 }
@@ -1078,8 +1098,8 @@ m_reference()->validReference(m_reference());
 
       void QStdItem::SetDataCmd::impl()
       {
-         //   UndoStackLock lock{this_model() ? (this_model()->undo_stack()->is_locked() ? nullptr : this_model()->undo_stack() ) : nullptr}; // RAII class
-          // UndoStackLock lock{this_model()};
+
+          UndoStackLock lck{get_stack()};
 
           // ist dieses Commando ein 'setItemData(QMap<int,QVariant>& ) Aufruf ?
           if(m_values)
@@ -1102,7 +1122,7 @@ m_reference()->validReference(m_reference());
              std::unique_ptr<QMap<int,QVariant>> tmp{std::make_unique<QMap<int,QVariant>>(item->itemData())};
 
              // dann setze die neuen Daten auf dem item
-             item->setItemData(*m_values.release());
+             d->setItemData(*m_values.release());
 
              // die alten daten sind jetzt die neuen -> involution !
              m_values.swap(tmp);

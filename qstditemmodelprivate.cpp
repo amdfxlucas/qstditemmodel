@@ -70,7 +70,8 @@ QStdItemModelPrivate::QStdItemModelPrivate(QStdItemModel* m)
 QStdItemModelPrivate::QStdItemModelPrivate()
    : root(new QStdItem), itemPrototype(nullptr)
 {
-   root->setFlags(Qt::ItemIsDropEnabled);
+    root->setModel(q_func());
+   root->d_func()->setFlags(Qt::ItemIsDropEnabled);
 }
 
 

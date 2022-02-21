@@ -232,7 +232,7 @@ private:
 
 
 
-   mutable UndoStack* m_stack;
+    mutable UndoStack* m_stack{nullptr};
 
     friend class QStdItemPrivate;
     friend class QStdItem;
