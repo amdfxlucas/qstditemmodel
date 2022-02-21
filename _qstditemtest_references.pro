@@ -2,20 +2,28 @@ QT += widgets
 requires(qtConfig(treeview))
 CONFIG += c++20
 
-#INCLUDEPATH+= "C:\Qt\6.1.2\msvc2019_64\include\QtCore\6.1.2"
-#INCLUDEPATH+="C:\Qt\6.1.2\msvc2019_64\include\QtWidgets\6.1.2"
-#INCLUDEPATH+="C:\Qt\6.1.2\msvc2019_64\include\QtGui\6.1.2"
-#INCLUDEPATH+="C:\Qt\6.1.2\msvc2019_64\include\QtGui\6.1.2"
+win32 {
+INCLUDEPATH+= "C:\Qt\6.1.2\msvc2019_64\include\QtCore\6.1.2"
+INCLUDEPATH+="C:\Qt\6.1.2\msvc2019_64\include\QtWidgets\6.1.2"
+INCLUDEPATH+="C:\Qt\6.1.2\msvc2019_64\include\QtGui\6.1.2"
+INCLUDEPATH+="C:\Qt\6.1.2\msvc2019_64\include\QtGui\6.1.2"
 
-#INCLUDEPATH +="C:\Qt\6.1.2\msvc2019_64\include\QtWidgets\6.1.2\QtWidgets\private"
-#INCLUDEPATH +="C:\Qt\6.1.2\msvc2019_64\include\QtWidgets\6.1.2\QtWidgets"
-#INCLUDEPATH +="C:\Qt\6.1.2\msvc2019_64\include\QtCore\6.1.2\QtCore\private"
-#INCLUDEPATH +="C:\Qt\6.1.2\msvc2019_64\include\QtCore\6.1.2\QtCore"
-#INCLUDEPATH += "C:\Qt\6.1.2\msvc2019_64\include\QtGui\6.1.2\QtGui\qpa"
-#INCLUDEPATH += "C:\Qt\6.1.2\msvc2019_64\include\QtGui\6.1.2\QtGui"
+INCLUDEPATH +="C:\Qt\6.1.2\msvc2019_64\include\QtWidgets\6.1.2\QtWidgets\private"
+INCLUDEPATH +="C:\Qt\6.1.2\msvc2019_64\include\QtWidgets\6.1.2\QtWidgets"
+INCLUDEPATH +="C:\Qt\6.1.2\msvc2019_64\include\QtCore\6.1.2\QtCore\private"
+INCLUDEPATH +="C:\Qt\6.1.2\msvc2019_64\include\QtCore\6.1.2\QtCore"
+INCLUDEPATH += "C:\Qt\6.1.2\msvc2019_64\include\QtGui\6.1.2\QtGui\qpa"
+INCLUDEPATH += "C:\Qt\6.1.2\msvc2019_64\include\QtGui\6.1.2\QtGui"
 
+
+INCLUDEPATH += C:/Qt/6.1.2/msvc2019_64/include
+DEPENDPATH += C:/Qt/6.1.2/msvc2019_64/include
+}
+
+unix {
 INCLUDEPATH+= "/home/lucas/Qt/6.1.3/gcc_64/include/QtGui/6.1.3"
 INCLUDEPATH+="/home/lucas/Qt/6.1.3/gcc_64/include/QtCore/6.1.3"
+}
 
 # FORMS       = mainwindow.ui
 HEADERS     = mainwindow.h \
@@ -48,11 +56,6 @@ SOURCES     = mainwindow.cpp \
               reference_controller.cpp \
               undostack.cpp
 
-# install
-target.path = $$[QT_INSTALL_EXAMPLES]/widgets/itemviews/editabletreemodel
-INSTALLS += target
 
 
 
-INCLUDEPATH += C:/Qt/6.1.2/msvc2019_64/include
-DEPENDPATH += C:/Qt/6.1.2/msvc2019_64/include

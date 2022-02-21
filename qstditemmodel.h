@@ -210,6 +210,11 @@ Q_SIGNALS:
 protected:
     QStdItemModel(QStdItemModelPrivate &dd, QObject *parent = nullptr);
 
+    static void setModel(QStdItemModel* model,QStdItem* item)
+    {item->setModel(model);}
+
+    void setModel(QStdItem* item)
+    {item->setModel(this);}
 private:
 
 
