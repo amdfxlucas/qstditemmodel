@@ -54,7 +54,9 @@
 
 int main(int argc, char *argv[])
 {
-    Q_INIT_RESOURCE(hplan_model);
+   // Q_INIT_RESOURCE(editabletreemodel);
+
+    QApplication::setApplicationName("qstditem demo");
 
     QApplication app(argc, argv);
     MainWindow window;

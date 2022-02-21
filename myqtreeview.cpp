@@ -1,87 +1,13 @@
 #include "myqtreeview.h"
 
-
-#include <QGraphicsOpacityEffect>
-#include <QGraphicsPixmapItem>
-#include <QGraphicsScene>
-#include <QPainter>
-
-
-
-// namespace{
-
-// USAGE:
- // QGraphicsBlurEffect *blur = new QGraphicsBlurEffect;
-// blur->setBlurRadius(8);
-
-// QImage source(":/image/altro_debolon.png");
-// QImage result = applyEffectToImage(source, blur);
-// result.save("final.png");
-
-
-
-
-/*
-
-QImage applyEffectToImage(QImage src, QGraphicsEffect *effect, int extent = 0)
-{
-    if(src.isNull()) return QImage();   //No need to do anything else!
-    if(!effect) return src;             //No need to do anything else!
-    QGraphicsScene scene;
-    QGraphicsPixmapItem item;
-    item.setPixmap(QPixmap::fromImage(src));
-    item.setGraphicsEffect(effect);
-    scene.addItem(&item);
-    QImage res(src.size()+QSize(extent*2, extent*2), QImage::Format_ARGB32);
-  //  res.fill(Qt::transparent);
-    QPainter ptr(&res);
-    scene.render(&ptr, QRectF(), QRectF( -extent, -extent, src.width()+extent*2, src.height()+extent*2 ) );
-    return res;
-}
-
-QImage applyEffectToImage(QPixmap src, QGraphicsEffect *effect, int extent = 0)
-{
-    if(src.isNull()) return QImage();   //No need to do anything else!
-    // if(!effect) return src;             //No need to do anything else!
-
-    QGraphicsScene scene;
-    QGraphicsPixmapItem item;
-    item.setPixmap(src);
-    item.setGraphicsEffect(effect);
-    scene.addItem(&item);
-    QImage res(src.size()+QSize(extent*2, extent*2), QImage::Format_ARGB32);
-    res.fill(Qt::transparent);
-    QPainter ptr(&res);
-    scene.render(&ptr, QRectF(), QRectF( -extent, -extent, src.width()+extent*2, src.height()+extent*2 ) );
-    return res;
-}
-
-
-void test()
-{
-    QImage bkgnd(":/image/altro_debolon.png");
-  //    bkgnd = bkgnd.scaled(this->size(), Qt::IgnoreAspectRatio);
-
-        auto opacity_effect{ new QGraphicsOpacityEffect()};
-          opacity_effect->setOpacity(0.5);
-
-          auto backgr{applyEffectToImage(bkgnd,opacity_effect)};
-        backgr.save("opac_img05.png");
-}
-
-}
-*/
+#include<QDrag>
+#include<QMouseEvent>
+#include <QApplication>
+#include "scope_tagger.h"
+#include "qstditemmodel.h"
 
 void MyQTreeView::paintEvent(QPaintEvent *event)
-{
-
-
-
-
-
-
-
-            QTreeView::paintEvent(event);
+{            QTreeView::paintEvent(event);
 
 }
 
@@ -89,26 +15,72 @@ MyQTreeView::MyQTreeView(QWidget* parent )
     : QTreeView(parent)
 {
 
- //  test();
+
 
 }
 
+void MyQTreeView::dragMoveEvent(QDragMoveEvent* e)
+{scope_tagger t{"MyQTreeView::dragMoveEvent"};
 
-/*
- //     QPixmap bkgnd(":/image/altro_debolon.png");
-        QImage bkgnd(":/image/altro_debolon.png");
-      //    bkgnd = bkgnd.scaled(this->size(), Qt::IgnoreAspectRatio);
+    QTreeView::dragMoveEvent(e);
+}
 
-            auto opacity_effect{ new QGraphicsOpacityEffect(this)};
-              opacity_effect->setOpacity(0.5);
+void MyQTreeView::dropEvent(QDropEvent* event)
+{
+    scope_tagger t{"MyQTreeView::dropEvent"};
+    QTreeView::dropEvent(event);
 
-              auto backgr{applyEffectToImage(bkgnd,opacity_effect)};
-            backgr.save("opac_img.png");
+}
 
-          QPalette palette=this->palette();
-          palette.setBrush(QPalette::Window, backgr);
-          this->setPalette(palette);
+void MyQTreeView::dragEnterEvent(QDragEnterEvent* event)
+{
+    scope_tagger t {"MyQTreeView::dragEnterEvent"};
+    QTreeView::dragEnterEvent(event);
+}
 
-          setMask(bkgnd.mask());
- *
- */
+Qt::DropAction MyQTreeView::supportedDropActions()
+{
+    return Qt::MoveAction;
+}
+
+void MyQTreeView::mousePressEvent(QMouseEvent *event)
+{
+    scope_tagger t{"MyQTreeView::mousePressEvent"};
+
+    if (event->button() == Qt::LeftButton)
+        dragStartPosition = event->pos();
+
+    QTreeView::mousePressEvent(event);
+}
+
+void MyQTreeView::mouseMoveEvent(QMouseEvent *event)
+{
+    scope_tagger t{"MyQTreeView::mouseMoveEvent"};
+   auto _model{reinterpret_cast<QStdItemModel*>(model())};
+
+
+
+    if (!(event->buttons() & Qt::LeftButton))
+        return;
+    if ((event->pos() - dragStartPosition).manhattanLength()
+         < QApplication::startDragDistance())
+    {    return;}
+
+
+    event->accept();
+
+    _model->undo_stack()->beginMacro("DragDrop");
+    qDebug()<< "<begin_macro DragDrop>";
+
+    startDrag(Qt::MoveAction);
+
+    qDebug().noquote() << "</begin_macro DragDrop>";
+    _model->undo_stack()->endMacro();
+}
+
+void MyQTreeView::dragLeaveEvent(QDragLeaveEvent *event)
+{
+    scope_tagger t{"MyQTreeView::dragLeaveEvent"};
+
+    QTreeView::dragLeaveEvent(event);
+}

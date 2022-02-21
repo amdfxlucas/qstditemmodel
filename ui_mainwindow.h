@@ -18,17 +18,13 @@
 #include <QtWidgets/QMenuBar>
 #include <QtWidgets/QStatusBar>
 #include <QtWidgets/QTreeView>
-#include <QListWidget>
+#include <QtWidgets/QVBoxLayout>
+#include <QtWidgets/QWidget>
 #include <QDockWidget>
 
 #include "myqtreeview.h"
-#include <QTreeWidget>
-
-#include <QtWidgets/QVBoxLayout>
-#include <QtWidgets/QWidget>
-#include <QListView>
-
-// #include <QTableView>
+#include <QUndoView>
+//#include "qundoview.h"
 
 QT_BEGIN_NAMESPACE
 
@@ -36,43 +32,28 @@ class Ui_MainWindow
 {
 public:
     QAction *exitAction;
+    QAction* saveAction;
+    QAction* openAction;
+    QAction* newAction;
+    QAction* saveAsAction;
+
     QAction *insertRowAction;
     QAction *removeRowAction;
     QAction *insertColumnAction;
     QAction *removeColumnAction;
     QAction *insertChildAction;
     QWidget *centralwidget;
-     QDockWidget *dock;
     QVBoxLayout *vboxLayout;
-
-    //QTableView* view;
-    //QListView *view ;
     MyQTreeView *view;
-    //QTreeView* view;
-
     QMenuBar *menubar;
     QMenu *fileMenu;
     QMenu *actionsMenu;
     QStatusBar *statusbar;
 
-    void create_dock_widgets( QMainWindow *MainWindow )
-    {
-        dock = new QDockWidget("Customers", MainWindow);
-         dock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
-
-  /*     QListWidget*  customerList = new QListWidget(dock);
-         customerList->addItems(QStringList()
-                 << "John Doe, Harmony Enterprises, 12 Lakeside, Ambleton"
-                 << "Jane Doe, Memorabilia, 23 Watersedge, Beaton"
-                 << "Tammy Shea, Tiblanka, 38 Sea Views, Carlton"
-                 << "Tim Sheen, Caraba Gifts, 48 Ocean Way, Deal"
-                 << "Sol Harvey, Chicos Coffee, 53 New Springs, Eccleston"
-                 << "Sally Hobart, Tiroli Tea, 67 Long River, Fedula");
-
-
-         dock->setWidget(customerList);
-         MainWindow->addDockWidget(Qt::RightDockWidgetArea, dock); */
-    }
+    QDockWidget* dock;
+    QAction* undo_action;
+    QAction* redo_action;
+     QUndoView* undo_view;
 
     void setupUi(QMainWindow *MainWindow)
     {
@@ -80,23 +61,42 @@ public:
             MainWindow->setObjectName(QString::fromUtf8("MainWindow"));
         MainWindow->resize(573, 468);
 
+        undo_action=new QAction(MainWindow);
+        undo_action->setObjectName(QString::fromUtf8("undoAction"));
+        redo_action=new QAction(MainWindow);
+        redo_action->setObjectName(QString::fromUtf8("redoAction"));
+
+
+
+         saveAction= new QAction(MainWindow);
+         saveAction->setText(QMainWindow::tr("save"));
+
+         openAction = new QAction(MainWindow);
+         openAction->setText(QMainWindow::tr("open"));
+
+         newAction= new QAction(MainWindow);
+         newAction->setText(QMainWindow::tr("new"));
+
+        saveAsAction = new QAction(MainWindow);
+        saveAsAction->setText(QMainWindow::tr("save as"));
+
         exitAction = new QAction(MainWindow);
         exitAction->setObjectName(QString::fromUtf8("exitAction"));
 
+
         insertRowAction = new QAction(MainWindow);
         insertRowAction->setObjectName(QString::fromUtf8("insertRowAction"));
-
         removeRowAction = new QAction(MainWindow);
         removeRowAction->setObjectName(QString::fromUtf8("removeRowAction"));
-
         insertColumnAction = new QAction(MainWindow);
         insertColumnAction->setObjectName(QString::fromUtf8("insertColumnAction"));
-
         removeColumnAction = new QAction(MainWindow);
         removeColumnAction->setObjectName(QString::fromUtf8("removeColumnAction"));
-
         insertChildAction = new QAction(MainWindow);
         insertChildAction->setObjectName(QString::fromUtf8("insertChildAction"));
+
+
+
 
         centralwidget = new QWidget(MainWindow);
         centralwidget->setObjectName(QString::fromUtf8("centralwidget"));
@@ -106,28 +106,21 @@ public:
         vboxLayout->setContentsMargins(0, 0, 0, 0);
         vboxLayout->setObjectName(QString::fromUtf8("vboxLayout"));
 
-        //view = new QTreeView(centralwidget);
         view = new MyQTreeView(centralwidget);
-
-        // view = new QListView(centralwidget);
-        // in einem ListView sieht man nur die TopLevel items als rows,
-        // aber keines der childern der items
-        // (bzw nur die unmittelbaren kinder des root_items )
-        // und auch nur deren 0-te Column
-
-       // view = new QTableView(centralwidget);
-        // bei einem TableView sieht man auch nur die unmittelbaren children des root_items als rows,
-        // dafür aber alle columns
-
 
         view->setObjectName(QString::fromUtf8("view"));
         view->setAlternatingRowColors(true);
         view->setSelectionBehavior(QAbstractItemView::SelectItems);
         view->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
-
-        // -----only possible with TreeView --------
         view->setAnimated(false);
         view->setAllColumnsShowFocus(true);
+
+
+
+        dock =  new QDockWidget("UndoCommand History",centralwidget);
+        dock->setAllowedAreas(Qt::RightDockWidgetArea);
+         undo_view = new QUndoView(dock);
+        dock->setWidget(undo_view);
 
         vboxLayout->addWidget(view);
 
@@ -137,16 +130,24 @@ public:
         menubar->setGeometry(QRect(0, 0, 573, 31));
         fileMenu = new QMenu(menubar);
         fileMenu->setObjectName(QString::fromUtf8("fileMenu"));
+
         actionsMenu = new QMenu(menubar);
         actionsMenu->setObjectName(QString::fromUtf8("actionsMenu"));
         MainWindow->setMenuBar(menubar);
+
         statusbar = new QStatusBar(MainWindow);
         statusbar->setObjectName(QString::fromUtf8("statusbar"));
         MainWindow->setStatusBar(statusbar);
 
         menubar->addAction(fileMenu->menuAction());
         menubar->addAction(actionsMenu->menuAction());
+
         fileMenu->addAction(exitAction);
+        fileMenu->addAction(openAction);
+        fileMenu->addAction(saveAction);
+        fileMenu->addAction(saveAsAction);
+        fileMenu->addAction(newAction);
+
         actionsMenu->addAction(insertRowAction);
         actionsMenu->addAction(insertColumnAction);
         actionsMenu->addSeparator();
@@ -154,8 +155,9 @@ public:
         actionsMenu->addAction(removeColumnAction);
         actionsMenu->addSeparator();
         actionsMenu->addAction(insertChildAction);
-
-        create_dock_widgets(MainWindow);
+        actionsMenu->addSeparator();
+        actionsMenu->addAction(undo_action);
+        actionsMenu->addAction(redo_action);
 
         retranslateUi(MainWindow);
 
@@ -164,8 +166,7 @@ public:
 
     void retranslateUi(QMainWindow *MainWindow)
     {
-        MainWindow->setWindowTitle(QCoreApplication::translate("MainWindow", "hplan_model demo", nullptr));
-
+        MainWindow->setWindowTitle(QCoreApplication::translate("MainWindow", "Editable Tree Model", nullptr));
         exitAction->setText(QCoreApplication::translate("MainWindow", "E&xit", nullptr));
 #if QT_CONFIG(shortcut)
         exitAction->setShortcut(QCoreApplication::translate("MainWindow", "Ctrl+Q", nullptr));

@@ -1,12 +1,5 @@
 *.user
 /build
-
-list_view_delegate.*
-list_view_delegate
-plan_view_delegate.*
-plan_view_delegate
-treemodel.*
-
 # Prerequisites
 *.d
 
@@ -39,3 +32,6 @@ treemodel.*
 *.exe
 *.out
 *.app
+
+#qt resource files
+*.qrc

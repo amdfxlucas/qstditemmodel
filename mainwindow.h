@@ -52,37 +52,48 @@
 #define MAINWINDOW_H
 
 #include "ui_mainwindow.h"
-#include "hplan_model.h"
 
 #include <QMainWindow>
+#include "path.h"
 
-class MainWindow
-        : public QMainWindow,
-        private Ui::MainWindow
+class QStdItemModel;
+
+class MainWindow : public QMainWindow, private Ui::MainWindow
 {
     Q_OBJECT
 
+private:
+    void update_undo();
+    bool okToClearData();
 public:
     MainWindow(QWidget *parent = nullptr);
+
+    void load(const QString &filename,    const Path& path =QList<PathItem>() );
+    // loads a model from file and restores the currentIndex in the view
 
 public slots:
     void updateActions();
 
+
+
 private slots:
-
-    void hide_non_workdays(bool ,const QModelIndex& index=QModelIndex() );
-
-    void customMenuRequested(QPoint pos);
+    void setCurrentIndex(const QModelIndex &index);
 
     void insertChild();
     bool insertColumn();
     void insertRow();
     bool removeColumn();
     void removeRow();
-private:
-      hplan_model* model;
 
-      void populate_dock_widget();
+    void undo();
+    void redo();
+
+    void fileNew();
+    bool fileSave();
+    bool fileSaveAs();
+    void fileOpen();
+private:
+    QStdItemModel* model;
 };
 
 #endif // MAINWINDOW_H

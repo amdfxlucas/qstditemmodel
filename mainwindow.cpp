@@ -49,125 +49,37 @@
 ****************************************************************************/
 
 #include "mainwindow.h"
-#include "treemodel.h"
-
-#include "hplan_model.h"
+#include "qstditemmodel.h"
+//#include "treemodel.h"
+//  #include <QUndoView>
 #include <QFile>
 
-#include "plan_model_builder.h"
+#include "scope_tagger.h"
 
-#include "hplan_item.h"
+#include "aqp.hpp"
 
-namespace{
-
-void setPlanItemType(auto* item , PlanItemTypes type)
-{
-    item->setData(0,DataRoles::TypeRole,type);
-}
-
-auto makeItemOrder = [](auto* item){setPlanItemType(item,PlanItemTypes::OrderType);};
-
-
-void  iterate(const QModelIndex & index, const auto * model,const auto& func)
- {
-if (index.isValid())
-{
-    // Do action here
-    // func(model->itemFromIndex(index));
-    func(static_cast<QTreeWidgetItem*>(index.internalPointer()) );
-
-}
-
-if (!model->hasChildren(index) || (index.flags() &
-Qt::ItemNeverHasChildren))
-{
-    return;
-}
-
-auto rows = model->rowCount(index);
-for (int i = 0; i < rows; ++i)
-    iterate(model->index(i, 0, index), model,func);
-  }
-
-}
-
-void MainWindow::hide_non_workdays(bool hide,const QModelIndex& index)
-{
-    QVariant var{std::cref(index)};
-
-    bool hideThisOne = hide && model->is_workday(index);
-    if (index.isValid())
-        view->setRowHidden(index.row(), index.parent(),
-                               hideThisOne);
-    if (!hideThisOne) {
-        for (int row = 0; row < model->rowCount(index); ++row)
-           hide_non_workdays(hide, model->index(row, 0, index));
-    }
-}
+#include <QFileDialog>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
     setupUi(this);
-    view->setAcceptDrops(true);
-    view->setDragEnabled(true);
-    view->setDropIndicatorShown(true);
-    view->setDefaultDropAction(Qt::MoveAction);
-    view->setAlternatingRowColors(true);
-    view->setDragDropMode(QAbstractItemView::DragDrop);
-
-    /*
-    const QStringList headers({tr("Title"), tr("Description")});
-
-    QFile file(":/default.txt");
-    file.open(QIODevice::ReadOnly);
-    TreeModel *model = new TreeModel(headers, file.readAll());
-    file.close();
-    */
-
-    model = new hplan_model(this);
-
-    plan_model_builder builder("2022");
-
-    builder.build(*model);
+    setWindowTitle("qstditemmodel demo");
 
 
+     model = new QStdItemModel(this);
+
+     undo_view->setStack(reinterpret_cast<QUndoStack*>(model->undo_stack()) );
+      addDockWidget(Qt::RightDockWidgetArea,dock);
 
     view->setModel(model);
+    view->setDefaultDropAction(Qt::MoveAction);
+    view->setDragEnabled(true);
+  //  view->setDragDropMode(QAbstractItemView::DragDrop);
+      view->setDragDropMode(QAbstractItemView::InternalMove);
 
-    //view->setWindowFlag(Qt::FramelessWindowHint,true);
-//view->setAttribute(Qt::WA_TranslucentBackground,true);
-
-  //  auto opacity_effect{ new QGraphicsOpacityEffect(this)};
-//    opacity_effect->setOpacity(0.5);
- //   view->setGraphicsEffect(opacity_effect );
-
-
-    view->setStyleSheet
-       (
-           "QTreeView#view {"
-            "background-color: rgba(255,255,255,100);"
-           "background-image:url(:image/025altro.png);"
-                "alternate-background-color: rgba(252, 249, 249, 50) ;"
-           "background-position:center ;"
-           "background-repeat:none;"
-                "opacity: 127;"
-           "}  "
-       );
-// alternate-background-color: rgba(252, 249, 249, 80)  rgba(219, 219, 219, 80)
-
-    // "filter:alpha(opacity=50);"
-//background-position: bottom right
-    // "background-color:white;"
-
-    //view->setStyleSheet("background:transparent");
-
-
-
-
-    // ---- only possible with TreeView --------
-     for (int column = 0; column < model->columnCount(); ++column)
-     {view->resizeColumnToContents(column);     }
+    for (int column = 0; column < model->columnCount(); ++column)
+        view->resizeColumnToContents(column);
 
     connect(exitAction, &QAction::triggered, qApp, &QCoreApplication::quit);
 
@@ -181,182 +93,244 @@ MainWindow::MainWindow(QWidget *parent)
     connect(removeColumnAction, &QAction::triggered, this, &MainWindow::removeColumn);
     connect(insertChildAction, &QAction::triggered, this, &MainWindow::insertChild);
 
+    connect(undo_action,&QAction::triggered,this,&MainWindow::undo);
+    connect(redo_action,&QAction::triggered,this,&MainWindow::redo);
+
+
+    connect(openAction,&QAction::triggered, this,&MainWindow::fileOpen);
+    connect(newAction,&QAction::triggered, this,&MainWindow::fileNew);
+    connect(saveAction,&QAction::triggered, this,&MainWindow::fileSave);
+    connect(saveAsAction,&QAction::triggered, this,&MainWindow::fileSaveAs);
+
+    updateActions();
+}
+
+
+void MainWindow::setCurrentIndex(const QModelIndex &index)
+{
+    if (index.isValid()) {
+        view->scrollTo(index);
+        view->setCurrentIndex(index);
+    }
+}
+
+
+bool MainWindow::fileSave()
+{
+
+
+    bool saved = false;
+    if (model->filename().isEmpty())
+    {    saved = fileSaveAs();
+    }
+    else
+    {
+        try
+        {
+            model->save();
+            setWindowModified(false);
+            setWindowTitle(tr("%1 - %2[*]")
+                    .arg(QApplication::applicationName())
+                    .arg(QFileInfo(model->filename()).fileName()));
+
+            statusBar()->showMessage(tr("Saved %1")
+                    .arg(model->filename()), 10000);
+            saved = true;
+        } catch (AQP::Error &error)
+        {
+            AQP::warning(this, tr("Error"),
+                    tr("Failed to save %1: %2").arg(model->filename())
+                    .arg(QString::fromUtf8(error.what())));
+        }
+    }
+    updateActions();
+    return saved;
+}
+
+
+bool MainWindow::fileSaveAs()
+{
+    QString filename = model->filename();
+    QString dir = filename.isEmpty() ? "."
+                                     : QFileInfo(filename).path();
+    filename = QFileDialog::getSaveFileName(this,
+            tr("%1 - Save As").arg(QApplication::applicationName()),
+            dir,
+            tr("%1 (*.debolon)").arg(QApplication::applicationName()));
+
+    if (filename.isEmpty())
+    {    return false;}
+
+    if (!filename.toLower().endsWith(".debolon"))
+    {    filename += ".debolon";}
+
+    model->setFilename(filename);
+
+    return fileSave();
+}
+
+
+bool MainWindow::okToClearData()
+{
+    if (isWindowModified())
+        return AQP::okToClearData(&MainWindow::fileSave, this,
+                tr("Unsaved changes"), tr("Save unsaved changes?"));
+    return true;
+}
+
+void MainWindow::fileNew()
+{
+    if (!okToClearData())
+    {return;}
+
+    model->clear();
+    model->setFilename(QString());
+
+    setWindowModified(false);
+
+    setWindowTitle(tr("%1 - Unnamed[*]")
+            .arg(QApplication::applicationName()));
+
+    updateActions();
+}
+
+
+
+
+void MainWindow::load(const QString &_filename,
+                      const Path& path)
+{
+    QApplication::setOverrideCursor(QCursor(Qt::WaitCursor));
+    try
+    {
+        model->loadFromFile(_filename);
+        if (!path.isEmpty())
+        {
+
+            setCurrentIndex(model->pathToIndex(path));
+
+        }
+
+        for (int column = 0; column < model->columnCount(); ++column)
+           {view->resizeColumnToContents(column);}
+
+        setWindowModified(false);
+
+        setWindowTitle(tr("%1 - %2[*]")
+                .arg(QApplication::applicationName())
+                .arg(QFileInfo(_filename).fileName()));
+
+        statusBar()->showMessage(tr("Loaded %1").arg(_filename),
+                                 10000);
+    } catch (AQP::Error &error)
+    {
+        AQP::warning(this, tr("Error"), tr("Failed to load %1: %2")
+                .arg(_filename).arg(QString::fromUtf8(error.what())));
+    }
+
     updateActions();
 
-   populate_dock_widget();
-
+    view->setFocus();
+    QApplication::restoreOverrideCursor();
 }
 
 
-void MainWindow::customMenuRequested(QPoint pos)
+void MainWindow::fileOpen()
 {
-  // auto item{proxyModel->item( list_view->indexAt(pos))};
+    if (!okToClearData())
+    {return;}
 
-  QModelIndex index1{view->indexAt(pos)};
+    QString filename = model->filename();
 
+    QString dir(filename.isEmpty() ? QString(".")
+                : QFileInfo(filename).canonicalPath());
 
+    filename = QFileDialog::getOpenFileName(this,
+            tr("%1 - Open").arg(QApplication::applicationName()),
+            dir, tr("production schedules (*.debolon)"));
 
-
-
-
-
-       // parent_dashboard->set_current_action_target_indexes(view->selectionModel()->selectedIndexes());
-
-    // QModelIndex index =item_list_widget->indexAt(pos);
-    // lokale variable index  vlt ersetzen durch attribut current_action_index des product_selectors
-    // damit der slot darauf zugreifen kann
-
-   /* QMessageBox::information(this,"row selected",
-                                tr("the following selection was added: %1").
-                                arg( index.data().toString() ));
-*/
-
-
-
-//    item_list_widget_menu->popup(item_list_widget->viewport()->mapToGlobal(pos));
-        // item_list_widget_menu->popup(list_view->viewport()->mapToGlobal(pos));
-
-  //    parent_dashboard->cMenu_edit()->popup(view->viewport()->mapToGlobal(pos));
+    if (!filename.isEmpty())
+        load(filename);
 }
 
-
-void MainWindow::populate_dock_widget()
+void MainWindow::undo()
 {
-    //-------------------------- populate the dockWidget ------------------------------------------------
-    dock->setWindowTitle("current orders");
-    QTreeWidget*  current_orders = new QTreeWidget(dock);
-    current_orders->setHeaderHidden(true);
+    QStdItemModel *model = static_cast<QStdItemModel*>(view->model());
 
-    current_orders->setDragDropMode(QAbstractItemView::DragDrop);
-    // bei DragOnly kann man es sich nicht nocheinmal anders überlegen, wenn man das produkt einmal eingefügt hat
-    // current_orders->setDragDropOverwriteMode(true);
-    current_orders->setDefaultDropAction(Qt::MoveAction);
-    current_orders->setDragEnabled(true);
-    current_orders->viewport()->setAcceptDrops(true); // mit false kann man es sich nichtmehr anders überlegen
+    model->undo_stack()->undo();
+    updateActions();
+}
 
+void MainWindow::redo()
+{
+    QStdItemModel *model = static_cast<QStdItemModel*>(view->model());
 
-    auto t_model{current_orders->model()};
+    model->undo_stack()->redo();
+    updateActions();
 
-    QTreeWidgetItem * config00 = new QTreeWidgetItem(current_orders);
-    config00->setText(0,"Konfiguration 00");
-    config00->setFlags(config00->flags() & ~Qt::ItemIsDragEnabled);
-    // mit  & ~Qt::ItemIsDropEnabled kann man ein produkt nichtmehr zurück tuhn, wenn man es sich anders überlegt
-
-
-    QTreeWidgetItem * order00 = new QTreeWidgetItem(config00);
-    order00->setText(0,"00000234156    2007-270302");
-    order00->setBackground(0,QBrush(QColor(39, 241, 245, 80),Qt::SolidPattern));
-    order00->setFlags(order00->flags() & ~Qt::ItemIsDropEnabled);
-    config00->addChild(order00);
-
-    QTreeWidgetItem * order01 = new QTreeWidgetItem(config00);
-    order01->setText(0,"00000637156    2007-270313");
-    order01->setBackground(0,QBrush(QColor(39, 241, 245, 80),Qt::SolidPattern));
-    order01->setFlags(order01->flags() & ~Qt::ItemIsDropEnabled);
-    config00->addChild(order01);
-
-    QTreeWidgetItem * order02 = new QTreeWidgetItem(config00);
-    order02->setText(0,"00000519256    2007-270315");
-    order02->setBackground(0,QBrush(QColor(39, 241, 245, 80),Qt::SolidPattern));
-    order02->setFlags(order02->flags() & ~Qt::ItemIsDropEnabled);
-    config00->addChild(order02);
-
-    // config00->parent()->indexOfChild(config00)
-    auto i_conf00{t_model->index(0,0 )};
-    // t_model->createIndex(config00->parent()->indexOfChild(config00),0,config00)
-    iterate( i_conf00,t_model,makeItemOrder);
-
-
-    current_orders->addTopLevelItem(config00);
-    //........................
-
-    QTreeWidgetItem * config01 = new QTreeWidgetItem(current_orders);
-    config01->setText(0,"Konfiguration 01");
-    config01->setFlags(config01->flags()& ~Qt::ItemIsDragEnabled);
-    // mit  & ~Qt::ItemIsDropEnabled  kein anders überlegen mehr
-
-    QTreeWidgetItem * order000 = new QTreeWidgetItem(config01);
-    order000->setText(0,"00000234156    2007-815301");
-    order000->setBackground(0,QBrush(QColor(255, 255, 0, 80) ,Qt::SolidPattern));
-    config01->addChild(order000);
-
-    QTreeWidgetItem * order001 = new QTreeWidgetItem(config01);
-    order001->setText(0,"00000637156    2007-815302");
-    order001->setBackground(0,QBrush(QColor(255, 255, 0, 80),Qt::SolidPattern));
-    config01->addChild(order001);
-
-    current_orders->addTopLevelItem(config01);
-
-    //..........
-    QTreeWidgetItem * config02 = new QTreeWidgetItem(current_orders);
-    config02->setText(0,"Konfiguration 02");
-  //  config02->setBackground(0,QBrush(Qt::red,Qt::SolidPattern));
-    config02->setFlags(config02->flags() &  ~Qt::ItemIsDragEnabled);
-    // mit ~Qt::ItemIsDropEnabled & kein anders überlegen mehr
-
-
-    QTreeWidgetItem * order0000 = new QTreeWidgetItem(config02);
-    order0000->setText(0,"00000234156    3007-384301");
-    order0000->setBackground(0,QBrush(QColor(255,0,0,80),Qt::SolidPattern));
-    config02->addChild(order0000);
-
-    QTreeWidgetItem * order0001 = new QTreeWidgetItem(config02);
-    order0001->setText(0,"00000637156    3057-384301");
-    order0001->setBackground(0,QBrush(QColor(255,0,0,80),Qt::SolidPattern));
-    config02->addChild(order0001);
-
-    QTreeWidgetItem * order0002 = new QTreeWidgetItem(config02);
-    order0002->setText(0,"00000519256    4507-384301");
-    order0002->setBackground(0,QBrush(QColor(255,0,0,80),Qt::SolidPattern));
-    config02->addChild(order0002);
-
-
-    QTreeWidgetItem * order0003 = new QTreeWidgetItem(config02);
-    order0003->setText(0,"00000519256    6057-384301");
-    order0003->setBackground(0,QBrush(QColor(255,0,0,80),Qt::SolidPattern));
-    config02->addChild(order0003);
-
-    current_orders->addTopLevelItem(config02);
-
-
-      dock->setWidget(current_orders);
-      addDockWidget(Qt::RightDockWidgetArea, dock);
 }
 
 void MainWindow::insertChild()
 {
     const QModelIndex index = view->selectionModel()->currentIndex();
-    QAbstractItemModel *model = view->model();
+    QStdItemModel *model = static_cast<QStdItemModel*>(view->model());
 
-    if (model->columnCount(index) == 0) {
-        if (!model->insertColumn(0, index))
+
+    scope_tagger t{ "MainWindow::insertChild"};
+
+    QString text{"insertChildAction"};
+    model->undo_stack()->beginMacro("MainWindow::"+text);
+
+    if (model->columnCount(index) == 0)
+    {
+        if (! (model->insertColumn(0, index)) )
+        {
+            model->undo_stack()->endMacro();
             return;
+        }
     }
 
-    if (!model->insertRow(0, index))
-        return;
 
-    for (int column = 0; column < model->columnCount(index); ++column) {
+
+    if(!(model->insertRow(0, index) ) )
+    {       model->undo_stack()->endMacro();
+        return;
+    }
+
+    for (int column = 0; column < model->columnCount(index); ++column)
+    {
         const QModelIndex child = model->index(0, column, index);
         model->setData(child, QVariant(tr("[No data]")), Qt::EditRole);
+
         if (!model->headerData(column, Qt::Horizontal).isValid())
             model->setHeaderData(column, Qt::Horizontal, QVariant(tr("[No header]")), Qt::EditRole);
     }
 
     view->selectionModel()->setCurrentIndex(model->index(0, 0, index),
                                             QItemSelectionModel::ClearAndSelect);
-    updateActions();
+
+
+    model->undo_stack()->endMacro();
+      updateActions();
+
 }
 
 bool MainWindow::insertColumn()
 {
-    QAbstractItemModel *model = view->model();
+    scope_tagger t{ "MainWindow::insertColumn"};
+
+      QStdItemModel *model = static_cast<QStdItemModel*>(view->model());
     int column = view->selectionModel()->currentIndex().column();
+
+    model->undo_stack()->beginMacro("MainWindow::insertColumn");
 
     // Insert a column in the parent item.
     bool changed = model->insertColumn(column + 1);
+
     if (changed)
         model->setHeaderData(column + 1, Qt::Horizontal, QVariant("[No header]"), Qt::EditRole);
+
+    model->undo_stack()->endMacro();
 
     updateActions();
 
@@ -365,11 +339,22 @@ bool MainWindow::insertColumn()
 
 void MainWindow::insertRow()
 {
+   scope_tagger t{"MainWindow::insertRow"};
+
     const QModelIndex index = view->selectionModel()->currentIndex();
-    QAbstractItemModel *model = view->model();
+    QStdItemModel *model = static_cast<QStdItemModel*>(view->model());
+
+
+    model->undo_stack()->beginMacro("MainWindow::insertRow");
+
+    if(index.row()+1 > model->rowCount())
+    {
+        return;
+    }
 
     if (!model->insertRow(index.row()+1, index.parent()))
-        return;
+    {    return;
+    }
 
     updateActions();
 
@@ -377,31 +362,80 @@ void MainWindow::insertRow()
         const QModelIndex child = model->index(index.row() + 1, column, index.parent());
         model->setData(child, QVariant(tr("[No data]")), Qt::EditRole);
     }
+    model->undo_stack()->endMacro();
+
 }
 
 bool MainWindow::removeColumn()
 {
-    QAbstractItemModel *model = view->model();
+    scope_tagger t{ "MainWindow::removeColumn"};
+
+        QStdItemModel *model = static_cast<QStdItemModel*>(view->model());
     const int column = view->selectionModel()->currentIndex().column();
+
+    model->undo_stack()->beginMacro("MainWindow::removeColumn");
 
     // Insert columns in each child of the parent item.
     const bool changed = model->removeColumn(column);
+    model->undo_stack()->endMacro();
+
     if (changed)
         updateActions();
+
 
     return changed;
 }
 
 void MainWindow::removeRow()
 {
+   scope_tagger t{ "MainWindow::removeRow"};
+
     const QModelIndex index = view->selectionModel()->currentIndex();
-    QAbstractItemModel *model = view->model();
+        QStdItemModel *model = static_cast<QStdItemModel*>(view->model());
+
+        model->undo_stack()->beginMacro("MainWindow::removeRow");
+
     if (model->removeRow(index.row(), index.parent()))
         updateActions();
+
+    model->undo_stack()->endMacro();
+
+
+}
+
+void MainWindow::update_undo()
+{
+    //   QStdItemModel *model = static_cast<QStdItemModel*>(view->model());
+
+    auto stack{model->undo_stack()};
+
+    if(stack->canRedo())
+    {
+        redo_action->setEnabled(true);
+            redo_action->setText("redo: "+ stack->redoText());
+    }else
+    {
+           redo_action->setEnabled(false);
+           redo_action->setText("redo");
+    }
+
+    if(stack->canUndo())
+    {
+        undo_action->setEnabled(true);
+        undo_action->setText("undo: " + stack->undoText() );
+    }
+    else
+    {
+           undo_action->setEnabled(false);
+           undo_action->setText("undo");
+    }
 }
 
 void MainWindow::updateActions()
 {
+    update_undo();
+
+
     const bool hasSelection = !view->selectionModel()->selection().isEmpty();
     removeRowAction->setEnabled(hasSelection);
     removeColumnAction->setEnabled(hasSelection);
@@ -410,14 +444,36 @@ void MainWindow::updateActions()
     insertRowAction->setEnabled(hasCurrent);
     insertColumnAction->setEnabled(hasCurrent);
 
-    if (hasCurrent) {
+    if (hasCurrent)
+    {
         view->closePersistentEditor(view->selectionModel()->currentIndex());
 
         const int row = view->selectionModel()->currentIndex().row();
         const int column = view->selectionModel()->currentIndex().column();
+
         if (view->selectionModel()->currentIndex().parent().isValid())
-            statusBar()->showMessage(tr("Position: (%1,%2)").arg(row).arg(column));
+        {    statusBar()->showMessage(tr("Position: (%1,%2)").arg(row).arg(column));
+        }
         else
+        {
             statusBar()->showMessage(tr("Position: (%1,%2) in top level").arg(row).arg(column));
+        }
     }
+
+
+    saveAction->setEnabled(isWindowModified());
+    int rows = model->rowCount();
+    saveAsAction->setEnabled(isWindowModified() || rows);
+
+
+
+ /*   foreach (QAction *action, QList<QAction*>() << editDeleteAction
+            << editMoveUpAction << editMoveDownAction << editCutAction
+            << editPromoteAction << editDemoteAction)
+
+        action->setEnabled(enable);
+        */
+
+    // editPasteAction->setEnabled(model->hasCutItem());
+
 }
