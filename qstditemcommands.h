@@ -52,12 +52,13 @@ public:
 
     virtual ~StdItemCmd();
 
-    QStdItemModel* this_model();
-    QStdItem* this_item();
-    QModelIndex this_index();
-    Path this_path();
+    constexpr UndoStack* get_stack()const;
+   constexpr QStdItemModel* this_model()const;
+   constexpr QStdItem* this_item()const;
+    QModelIndex this_index()const;
+    Path this_path()const ;
 
-    reference* m_reference(){return m_ref;};
+    reference* m_reference()const {return m_ref;};
     bool redoSuccessFlag()const{return redo_ret_code;   }
     void setSuccessFlag(bool flag){redo_ret_code=flag;}
 private:
