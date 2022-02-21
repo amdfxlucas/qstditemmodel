@@ -16,17 +16,18 @@ enum DataRoles{TypeRole=257,            // ein enumerator aus 'PlanItemTypes'
                DateRole,                // nein QDate !! //string '23.02.22'
                WeekdayRole,             // nein Int !! // string : 'Mo' , 'Di'
                DayOfYearRole,           // INT zwischen 1 und 365  Tag des Jahres
-               DayOfMonth,                // int zwischen 1 und 31 Tag des Monats
+               DayOfMonth,              // int zwischen 1 und 31 Tag des Monats
                WeekOfYear,              // int zwischen 1 und 53 Kalenderwoche des Jahres
                WeekOfMonth,             // int
                TimeRole,                // string/boost::icl::discrete_interval '08:30-12:50' zeitinterval wann ein auftrag gescheduled ist
-               StartRole,               // string '08:32' wann der time slot des auftrages beginnt
-               EndRole,                 // string '12:50' wann der time solot des auftrages endet
+               StartTimeRole,           // string '08:32' wann der time slot des auftrages beginnt
+               EndTimeRole,             // string '12:50' wann der time solot des auftrages endet
                IsWorkdayRole,           // boo   ist dieser tag ein arbeitstag oder nicht
-              ProdSpeedRole,           // produktions geschwindigkeit für ein produkt in m/min
-              IncuredTrashRole,     // the an einem Tag/Woche/Monat angefallene Menge an Ausschuss
-              ProdTimeRole,          // produktions zeit für order in 'min', berrechnet aus der QuantityRole
-               ConfigIDRole         // which machine configuration does this order belong to // needed by the QStyledItemDelegate to color the order
+              ProdSpeedRole,            // produktions geschwindigkeit für ein produkt in m/min
+              IncuredTrashRole,         // the an einem Tag/Woche/Monat angefallene Menge an Ausschuss
+              ProdTimeRole,             // produktions zeit für order in 'min', berrechnet aus der QuantityRole
+               ConfigIDRole,            // which machine configuration does this order belong to // needed by the QStyledItemDelegate to color the order
+               CommentRole              // editierbarer Kommentar z.B. 'Versuch- neues Produkt'
               };
 
 class plan_item

@@ -10,24 +10,20 @@ HEADERS     = mainwindow.h \
               hplan_model.h \
               myqtreeview.h \
               plan_model_builder.h \
-              treeitem.h \
-              treemodel.h \
               ui_mainwindow.h\
-              _qabstractitemmodel.h\
-              _qabstractitemmodel_p.h\
+          #   _qabstractitemmodel.h\
+          #    _qabstractitemmodel_p.h\
              # _qstandarditemmodel.h\
              # _qstandarditemmodel_p.h
 
 
-RESOURCES   = editabletreemodel.qrc
+RESOURCES   = hplan_model.qrc
 
 SOURCES     = mainwindow.cpp \
               hplan_item.cpp \
               hplan_model.cpp \
               myqtreeview.cpp \
               plan_model_builder.cpp \
-              treeitem.cpp \
-              treemodel.cpp \
               main.cpp\
               #../qt6_src/_qabstractitemmodel.cpp\
               #../qt6_src/_qstandarditemmodel.cpp

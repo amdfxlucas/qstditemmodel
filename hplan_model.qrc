@@ -1,7 +1,5 @@
 <RCC>
-    <qresource prefix="/images">
-        <file>default.txt</file>
-    </qresource>
+    <qresource prefix="/images"/>
     <qresource prefix="/image">
         <file>altro_debolon.ico</file>
         <file>altro-debolon-squarelogo.ico</file>

@@ -79,6 +79,7 @@ public:
         if (MainWindow->objectName().isEmpty())
             MainWindow->setObjectName(QString::fromUtf8("MainWindow"));
         MainWindow->resize(573, 468);
+
         exitAction = new QAction(MainWindow);
         exitAction->setObjectName(QString::fromUtf8("exitAction"));
 
@@ -163,7 +164,8 @@ public:
 
     void retranslateUi(QMainWindow *MainWindow)
     {
-        MainWindow->setWindowTitle(QCoreApplication::translate("MainWindow", "Editable Tree Model", nullptr));
+        MainWindow->setWindowTitle(QCoreApplication::translate("MainWindow", "hplan_model demo", nullptr));
+
         exitAction->setText(QCoreApplication::translate("MainWindow", "E&xit", nullptr));
 #if QT_CONFIG(shortcut)
         exitAction->setShortcut(QCoreApplication::translate("MainWindow", "Ctrl+Q", nullptr));
