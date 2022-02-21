@@ -28,7 +28,7 @@ SOURCES     = mainwindow.cpp \
               #../qt6_src/_qabstractitemmodel.cpp\
               #../qt6_src/_qstandarditemmodel.cpp
 
-
+INCLUDEPATH+="$$_PRO_FILE_PWD_/qstditemmodel"
 
 #INCLUDEPATH+= "J:\qt6_src"
 
