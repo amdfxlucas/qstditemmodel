@@ -340,7 +340,7 @@ QStdItem::RemoveRowsCmd::~RemoveRowsCmd()
        d->rows += m_count;
 
         if (d->model)
-        {    d->model->d_func()->rowsInserted(item, m_row-1, m_count);
+        {    d->model->d_func()->rowsInserted(item, (m_row>1) ? m_row-1 : 0, m_count);
         }
 
 
@@ -549,7 +549,70 @@ m_reference()->validReference(m_reference());
                     m_reference()->validReference(m_reference());
    }
 
+     // VARIANTE II
+     QStdItem::InsertColumnCmd::InsertColumnCmd(
+                 QStdItem* i,
+                  int column,
+                  int count,
+                  QUndoCommand* parent)
+         :StdItemCmd(i,parent) ,
+           m_count(count),
+           m_column(column)
+     {
+         prev_row_count= i->rowCount();
+         prev_col_count=i->columnCount();
 
+   setText(QString("InsertColumnCmd TypeII - col: %1,count: %2").arg(column).arg(count));
+
+         /* diese Bedingung stammt aus:
+           bool QStdItemPrivate::insertColumns(int column, int count, const QList<QStdItem*> &items)
+           an die das VARIANTE I command delegiert
+
+          */
+      /*   if(! ((m_count < 1) || (m_column < 0) || (m_column > prev_col_count) || m_count == 0) )
+         {
+             is_valid_cmd=false;
+         }
+     */
+
+         // wird nur bei VARIANTE I benötigt
+       //  if(prev_row_count < m_items.count())
+       //  {resize_rows=true;}
+
+         if(prev_col_count< m_column)
+         {
+             insert_past_end=true;
+         }
+     }
+
+
+     // VARIANTE I
+     QStdItem::InsertColumnCmd::InsertColumnCmd(QStdItem* i,
+                     int col,
+                     const QList<QStdItem*>& items,
+                     QUndoCommand* parent)
+         : StdItemCmd(i,parent),
+           m_column(col)
+     {
+         setText(QString("InsertColumnCmd TypI - col: %1,count: %2").arg(col).arg(items.count()));
+
+         prev_row_count = i->rowCount();
+          prev_col_count=i->columnCount();
+
+         // the commands stores deep copies of the inserted items
+         // not pointer
+         for(auto* it : items)
+         {   m_items.emplace_back(*it);      }
+
+
+         if(! ( (m_column < 0) || (m_column >prev_col_count) ) )
+         {
+             is_valid_cmd=false;
+         }
+
+         if(prev_row_count < m_items.count())
+         {resize_rows=true;}
+     }
 
    void QStdItem::InsertColumnCmd::undo()
    {scope_tagger t{"QStdItem::InsertColumnCmd::undo"};
@@ -648,6 +711,56 @@ m_reference()->validReference(m_reference());
 
 
    }
+
+     // VARIANTE I Command
+     QStdItem::InsertRowCmd::InsertRowCmd(
+                 QStdItem* it,
+                  int row,
+                  const QList<QStdItem*>&items,
+                  bool do_resize,
+                  QUndoCommand* parent)
+         :StdItemCmd(it,parent) ,
+           resize_columns(do_resize),
+           m_row(row)
+     {
+         setText(QString("InsertRowCmd Typ I - row: %1, count: %2, do_resize: %3").arg(row).arg(items.count() ).arg(do_resize) );
+
+         prev_col_count = it->columnCount();
+         prev_row_count= it->rowCount();
+
+         // the commands stores deep copies of the inserted items
+         // not pointer
+         for(auto* it : items)
+         {   m_items.emplace_back(*it);      }
+
+
+         if(prev_col_count< m_items.count())
+         {
+             resize_columns=true;
+         }
+     }
+
+
+     // VARIANTE II Command
+     QStdItem::InsertRowCmd::InsertRowCmd(
+                 QStdItem* it,
+                  int row,
+                  int count,
+                  QUndoCommand* parent)
+         :StdItemCmd(it,parent) ,
+           m_count(count),
+           m_row(row)
+     {
+          setText(QString("InsertRowCmd Typ II - row: %1, count: %2").arg(row).arg(count) );
+
+         prev_row_count= it->rowCount();
+         prev_col_count=it->columnCount();
+
+         if(prev_row_count < m_row)
+         {
+             insert_past_end=true;
+         }
+     }
 
 
    void QStdItem::InsertRowCmd::undo()
@@ -784,6 +897,43 @@ m_reference()->validReference(m_reference());
       impl();
 
    }
+
+
+  QStdItem::SetChildCmd:: SetChildCmd(
+              QStdItem* i,
+               int row,
+               int column,
+               QStdItem *item, // the child item to be inserted
+               bool emitChanged,
+               QUndoCommand* parent )
+       : StdItemCmd(i,parent ) ,
+         m_row(row),
+         m_column(column),
+   m_child(item),
+     _emit_changed_(emitChanged)
+   {
+       setText(QString("SetChildCmd - row: %1, col: %2").arg(row).arg(column));
+
+       prev_row_count = i->rowCount();
+       prev_col_count =i->columnCount();
+
+       if(prev_row_count <= m_row)
+       { resize_rows=true;}
+
+       if(prev_col_count <= m_column)
+       {
+           resize_columns=true;
+       }
+
+       /* das ist die stelle in QStdItemPrivate::setChild(row,column
+        * wo entschieden wird ob die childtable resized wird
+          if (rows <= row){    q->setRowCount(row + 1);}
+
+           if (columns <= column){       q->setColumnCount(column + 1);}
+          */
+
+
+   } // the command takes ownership of the child-item  'item'
 
    void QStdItem::SetChildCmd::redo()
    {

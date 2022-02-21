@@ -91,6 +91,8 @@ private:
           : StdItemCmd(i,parent),
             m_row(row)
       {
+          setText(QString("RemoveRowsCmd Typ I - row: %1").arg(row) );
+
           m_count=1;
           prev_row_count= i->rowCount();
 
@@ -106,6 +108,8 @@ private:
             m_count(count),
             m_row(row)
       {
+          setText(QString("RemoveRowsCmd Typ II - row: %1, count: %2").arg(row).arg(count) );
+
           prev_row_count= i->rowCount();
 
           if(i->rowCount()-1==row)
@@ -141,6 +145,8 @@ private:
           : StdItemCmd(i,parent),
             m_column(column)
       {
+          setText(QString("RemoveColumnsCmd Typ I - column: %1").arg(column));
+
               prev_col_count=i->columnCount();
               m_count=1;
               if(i->columnCount()-1==column){is_last_column=true;}
@@ -159,6 +165,8 @@ private:
             m_count(count),
             m_column(column)
       {
+          setText(QString("RemoveColumnsCmd Typ II - column: %1, count: %2").arg(column).arg(count) );
+
           prev_col_count=i->columnCount();
 
               if(i->columnCount()-1==column)
@@ -207,44 +215,14 @@ this decision is represented by the 'resize_columns' data member
                    int row,
                    const QList<QStdItem*>&items,
                    bool do_resize,
-                   QUndoCommand* parent=nullptr)
-          :StdItemCmd(it,parent) ,
-            resize_columns(do_resize),
-            m_row(row)
-
-      {   prev_col_count = it->columnCount();
-          prev_row_count= it->rowCount();
-
-          // the commands stores deep copies of the inserted items
-          // not pointer
-          for(auto* it : items)
-          {   m_items.emplace_back(*it);      }
-
-
-          if(prev_col_count< m_items.count())
-          {
-              resize_columns=true;
-          }
-      }
+                   QUndoCommand* parent=nullptr);
 
 
       // VARIANTE II Command
       InsertRowCmd(QStdItem* it,
                    int row,
                    int count,
-                   QUndoCommand* parent=nullptr)
-          :StdItemCmd(it,parent) ,
-            m_count(count),
-            m_row(row)
-      {
-          prev_row_count= it->rowCount();
-          prev_col_count=it->columnCount();
-
-          if(prev_row_count < m_row)
-          {
-              insert_past_end=true;
-          }
-      }
+                   QUndoCommand* parent=nullptr);
 
       void redo() override;
 
@@ -272,66 +250,19 @@ this decision is represented by the 'resize_columns' data member
       InsertColumnCmd(QStdItem* i,
                       int col,
                       const QList<QStdItem*>& items,
-                      QUndoCommand* parent=nullptr)
-          : StdItemCmd(i,parent),
-            m_column(col)
-      {
-          prev_row_count = i->rowCount();
-           prev_col_count=i->columnCount();
-          // the commands stores deep copies of the inserted items
-          // not pointer
-          for(auto* it : items)
-          {   m_items.emplace_back(*it);      }
-
-
-          if(! ( (m_column < 0) || (m_column >prev_col_count) ) )
-          {
-              is_valid_cmd=false;
-          }
-
-          if(prev_row_count < m_items.count())
-          {resize_rows=true;}
-      }
-
+                      QUndoCommand* parent=nullptr)     ;
 
       // VARIANTE II
       InsertColumnCmd(QStdItem* i,
                    int column,
                    int count,
-                   QUndoCommand* parent=nullptr)
-          :StdItemCmd(i,parent) ,
-            m_count(count),
-            m_column(column)
-      {
-          prev_row_count= i->rowCount();
-          prev_col_count=i->columnCount();
-
-
-
-          /* diese Bedingung stammt aus:
-            bool QStdItemPrivate::insertColumns(int column, int count, const QList<QStdItem*> &items)
-            an die das VARIANTE I command delegiert
-
-           */
-       /*   if(! ((m_count < 1) || (m_column < 0) || (m_column > prev_col_count) || m_count == 0) )
-          {
-              is_valid_cmd=false;
-          }
-      */
-
-          // wird nur bei VARIANTE I benötigt
-        //  if(prev_row_count < m_items.count())
-        //  {resize_rows=true;}
-
-          if(prev_col_count< m_column)
-          {
-              insert_past_end=true;
-          }
-      }
+                   QUndoCommand* parent=nullptr);
 
       void undo() override;
       void redo() override;
   };
+
+
 
   class QStdItem::SetRowCountCmd
   :public StdItemCmd
@@ -340,9 +271,14 @@ this decision is represented by the 'resize_columns' data member
       int m_rows;
       void impl();
   public:
-      SetRowCountCmd(QStdItem* i,int rows,QUndoCommand* parent=nullptr)
-          :StdItemCmd(i,parent), m_rows(rows)
-      {}
+      SetRowCountCmd(QStdItem* i,
+                     int rows,
+                     QUndoCommand* parent=nullptr)
+          :StdItemCmd(i,parent),
+            m_rows(rows)
+      {
+          setText(QString("SetRowCountCmd - count: %1").arg(rows));
+      }
 
       void redo()override;
       void undo() override;
@@ -357,9 +293,14 @@ this decision is represented by the 'resize_columns' data member
       int m_columns;
       void impl();
   public:
-      SetColumnCountCmd(QStdItem* i,int columns,QUndoCommand* parent=nullptr)
-          :StdItemCmd(i,parent), m_columns(columns)
-      {}
+      SetColumnCountCmd(QStdItem* i,
+                        int columns,
+                        QUndoCommand* parent=nullptr)
+          :StdItemCmd(i,parent),
+            m_columns(columns)
+      {
+          setText(QString("SetColumnCountCmd - count: %1").arg(columns));
+      }
 
       void redo()override;
       void undo() override;
@@ -374,10 +315,15 @@ this decision is represented by the 'resize_columns' data member
       void impl();
       QStdItemModel* m_model;
   public:
-      SetModelCmd(QStdItem* i,QStdItemModel* ptr_model,QUndoCommand* parent=nullptr)
+      SetModelCmd(QStdItem* i,
+                  QStdItemModel* ptr_model,
+                  QUndoCommand* parent=nullptr)
           :StdItemCmd(i,parent),
             m_model(ptr_model)
-      {}
+      {
+      setText(QString("SetModelCmd"));
+      }
+
       void undo() override;
       void redo() override;
 
@@ -401,33 +347,7 @@ this decision is represented by the 'resize_columns' data member
                   int column,
                   QStdItem *item, // the child item to be inserted
                   bool emitChanged=true,
-                  QUndoCommand* parent =nullptr)
-          : StdItemCmd(i,parent ) ,
-            m_row(row),
-            m_column(column),
-      m_child(item),
-        _emit_changed_(emitChanged)
-      {
-          prev_row_count = i->rowCount();
-          prev_col_count =i->columnCount();
-
-          if(prev_row_count <= m_row)
-          { resize_rows=true;}
-
-          if(prev_col_count <= m_column)
-          {
-              resize_columns=true;
-          }
-
-          /* das ist die stelle in QStdItemPrivate::setChild(row,column
-           * wo entschieden wird ob die childtable resized wird
-             if (rows <= row){    q->setRowCount(row + 1);}
-
-              if (columns <= column){       q->setColumnCount(column + 1);}
-             */
-
-
-      } // the command takes ownership of the child-item  'item'
+                  QUndoCommand* parent =nullptr);
 
       void redo() override;
       void undo() override;
@@ -440,9 +360,13 @@ this decision is represented by the 'resize_columns' data member
       QList<QStdItemData> m_values;
       QList<int> m_roles;
   public:
-      ClearDataCmd(QStdItem* i,QUndoCommand* parent=nullptr)
+      ClearDataCmd(QStdItem* i,
+                   QUndoCommand* parent=nullptr)
           : StdItemCmd(i,parent)
-      {}
+      {
+          setText(QString("ClearDataCmd"));
+      }
+
       void undo() override;
       void redo() override;
 
@@ -465,7 +389,10 @@ this decision is represented by the 'resize_columns' data member
                  QUndoCommand* parent=nullptr)
           : StdItemCmd(i,parent),
             m_role(role),
-            m_value(value){}
+            m_value(value)
+      {
+          setText(QString("SetDataCmd Typ I"));
+      }
 
 
       SetDataCmd(QStdItem* i,
@@ -473,7 +400,9 @@ this decision is represented by the 'resize_columns' data member
                  QUndoCommand* parent=nullptr)
           : StdItemCmd(i,parent),
             m_values(std::make_unique<QMap<int,QVariant>>(std::move(data)) )
-           {}
+           {
+           setText(QString("SetDataCmd Typ II"));
+      }
 
       void undo() override;
 
