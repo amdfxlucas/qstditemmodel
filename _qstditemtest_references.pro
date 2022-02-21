@@ -1,6 +1,7 @@
 QT += widgets
 #requires(qtConfig(treeview))
 CONFIG += c++20
+CONFIG+= staticlib # to build a static lib instead of shared
 
 TEMPLATE=lib
 
