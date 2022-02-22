@@ -53,6 +53,11 @@ void MyQTreeView::mousePressEvent(QMouseEvent *event)
     QTreeView::mousePressEvent(event);
 }
 
+   void MyQTreeView::setExpanded(const Path& path,bool enable)
+   {
+       QTreeView::setExpanded( static_cast<QStdItemModel*>(model())->pathToIndex(path),enable);
+   }
+
 void MyQTreeView::mouseMoveEvent(QMouseEvent *event)
 {
     scope_tagger t{"MyQTreeView::mouseMoveEvent"};

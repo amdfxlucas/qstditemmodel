@@ -1,6 +1,7 @@
 #ifndef MYQTREEVIEW_H
 #define MYQTREEVIEW_H
 #include <QTreeView>
+#include "path.h"
 #include "import_export.h"
 
 
@@ -10,6 +11,7 @@ class TEST_LIB_EXPORT  MyQTreeView
 public:
     MyQTreeView(QWidget* parent = nullptr);
 
+    void setExpanded(const Path& path,bool enable);
 
     void dragMoveEvent(QDragMoveEvent* e);
     void dropEvent(QDropEvent* event);
