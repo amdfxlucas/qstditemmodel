@@ -91,7 +91,7 @@ void QStdItem::SetModelCmd::impl()
 
     QStdItemPrivate* const d= item->d_func();
 
-    // UndoStackLock lock{this_model() ? this_model()->undo_stack() : nullptr}; // RAII class
+     UndoStackLock lock{this_model() ? this_model()->undo_stack() : nullptr}; // RAII class
 
     auto old_model{d->model};
 
@@ -127,6 +127,7 @@ void QStdItem::setModel(QStdItemModel* m)
 QStdItem::RemoveColumnsCmd::  ~RemoveColumnsCmd()
 {
 
+
     auto item{this_item()};
 
     QStdItemPrivate* const d= item->d_func();
@@ -142,7 +143,7 @@ QStdItem::RemoveColumnsCmd::  ~RemoveColumnsCmd()
      //  item->d_func()->setModel(nullptr);
        item->setModel(nullptr);
 
-       delete item;
+    //   delete item;
    }
 }
 
@@ -162,12 +163,15 @@ QStdItem::RemoveRowsCmd::~RemoveRowsCmd()
    while(!m_items.isEmpty())
    {
        auto item{ m_items.takeLast()};
-       if(!item){break;}
+      // if(!item){break;}
+        if(!item){continue;}
        //item->d_func()->setModel(nullptr);
        item->setModel(nullptr);
 
-       delete item;
+   //    delete item;
    }
+
+
 }
 
 
@@ -378,7 +382,7 @@ QStdItem::RemoveRowsCmd::~RemoveRowsCmd()
 
       QStdItemPrivate* const d= item->d_func();
 
-     UndoStackLock lock{this_model() ?  this_model()->undo_stack() : nullptr}; // RAII class
+    UndoStackLock lock{this_model() ?  this_model()->undo_stack() : nullptr}; // RAII class
 
 
     // if(m_count!=-1)   {
@@ -403,7 +407,8 @@ QStdItem::RemoveRowsCmd::~RemoveRowsCmd()
          {
              QStdItem *oldItem = d->children.at(j);
 
-            // if (oldItem){oldItem->d_func()->setModel(nullptr);}
+             //if (oldItem){oldItem->d_func()->setModel(nullptr);}
+              if (oldItem){oldItem->setModel(nullptr);}
 
              //delete oldItem;
            //  m_items.append(oldItem);
@@ -514,7 +519,6 @@ m_reference()->validReference(m_reference());
 
 m_reference()->validReference(m_reference());
    }
-
 
 
 
@@ -734,7 +738,7 @@ m_reference()->validReference(m_reference());
           }
           setSuccessFlag( d->insertRows(row, count, QList<QStdItem*>()) );
       }
-
+m_reference()->validReference(m_reference());
 
    }
 
@@ -846,7 +850,7 @@ m_reference()->validReference(m_reference());
 
      }
 
-
+m_reference()->validReference(m_reference());
    }
 
    void QStdItem::SetColumnCountCmd::redo()
@@ -857,6 +861,7 @@ m_reference()->validReference(m_reference());
       qDebug()<< "</QStdItem::SetColumnCountCmd::redo> ";
 
    }
+
    void QStdItem::SetColumnCountCmd::impl()
    {
 
@@ -873,12 +878,18 @@ m_reference()->validReference(m_reference());
          return;
 
      if (cc < m_columns)
-     {    item->insertColumns(qMax(cc, 0), m_columns - cc);}
+     {    item->insertColumns(qMax(cc, 0), m_columns - cc);
+          //d->insertColumns(qMax(cc, 0), m_columns - cc,QList<QStdItem*>(m_columns - cc,nullptr) );
+     }
      else
-     {item->removeColumns(qMax(m_columns, 0), cc - m_columns);}
+     {
+         item->removeColumns(qMax(m_columns, 0), cc - m_columns);
+     }
 
      // backup the previous column count
      m_columns=cc;
+
+                    m_reference()->validReference(m_reference());
    }
 
    void QStdItem::SetColumnCountCmd::undo()
@@ -916,12 +927,16 @@ m_reference()->validReference(m_reference());
 
          if (rc < m_rows)
          {   // this does not increase column count ?! right
-             item->insertRows(qMax(rc, 0), m_rows - rc);}
+             item->insertRows(qMax(rc, 0), m_rows - rc);
+              //d->insertRows(qMax(rc, 0), m_rows - rc,QList<QStdItem*>(m_rows-rc,nullptr) );
+         }
          else
-         {        item->removeRows(qMax(m_rows, 0), rc - m_rows);}
+         {        item->removeRows(qMax(m_rows, 0), rc - m_rows);
+         }
 
 
          m_rows=rc;
+                        m_reference()->validReference(m_reference());
      }
 
 
@@ -986,7 +1001,7 @@ m_reference()->validReference(m_reference());
        // setChild will call setRowCount , setColumnCount to resize child table if eighter: columns <m_column || rows < m_row
 
 
-          d->setChild(m_row, m_column, m_child, true); // setChild is 'void' , No ret_code
+      m_child=     d->setChild(m_row, m_column, m_child, true); // setChild is 'void' , No ret_code
           // this method calls many main class functions through its q-pointer,
           // which are internally implemented in terms of UndoCommands themselfes
           // but with the push_lock in place, its safe. the stack will execute any pushed command,
@@ -995,7 +1010,7 @@ m_reference()->validReference(m_reference());
 
       // this_model()->undo_stack()->endMacro();
 
-
+    m_reference()->validReference(m_reference());
    }
 
    void QStdItem::SetChildCmd::undo()
@@ -1046,6 +1061,7 @@ m_reference()->validReference(m_reference());
        tmpCmd.redo();
         m_child= tmpCmd.get_child() ;*/
 
+m_reference()->validReference(m_reference());
 
    }
 
@@ -1075,7 +1091,7 @@ m_reference()->validReference(m_reference());
       if (d->model)
           d->model->d_func()->itemChanged(this_item() , QList<int>{});
 
-
+m_reference()->validReference(m_reference());
    }
 
 
@@ -1098,7 +1114,7 @@ m_reference()->validReference(m_reference());
        m_roles.clear();
 
 
-
+m_reference()->validReference(m_reference());
    }
 
 
@@ -1123,7 +1139,7 @@ m_reference()->validReference(m_reference());
           }else{ // oder ein setData(int role,const QVariant& value) Aufruf
               impl_single_role();
           }
-
+    m_reference()->validReference(m_reference());
       }
 
 

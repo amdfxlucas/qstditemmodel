@@ -281,6 +281,8 @@ void QStdItemModelPrivate::decodeDataRecursive(QDataStream &stream, QStdItem *it
         QStdItem *child = createItem();
         child->setModel(q_func() )             ;
 
+      //  auto child = new QStdItem(q_func());
+
         decodeDataRecursive(stream, child);
         item->setChild( childPos / colCount, childPos % colCount, child);
     }

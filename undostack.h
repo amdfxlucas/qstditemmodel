@@ -37,8 +37,8 @@
 **
 ****************************************************************************/
 
-#ifndef UNDOSTACK_H
-#define UNDOSTACK_H
+#ifndef QUNDOSTACK_H
+#define QUNDOSTACK_H
 #include "import_export.h"
 
 #include <QtGui/qtguiglobal.h>

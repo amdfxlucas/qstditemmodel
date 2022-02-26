@@ -1535,8 +1535,11 @@ bool QStdItemModel::dropMimeData(const QMimeData *data, Qt::DropAction action,
     while (!stream.atEnd())
     {
         int r, c;
-        QStdItem *item = d->createItem();
-        item->setModel(this); // lucas 14.02.22
+       // QStdItem *item = d->createItem();
+      //  item->setModel(this); // lucas 14.02.22
+
+        auto item = new QStdItem(this);
+
         stream >> r >> c;
         d->decodeDataRecursive(stream, item);
 
@@ -1631,6 +1634,14 @@ bool QStdItemModel::dropMimeData(const QMimeData *data, Qt::DropAction action,
     return true;
 }
 
+bool QStdItemModel::contains(unsigned long long int uuid)const
+{
+    return d_func()->root->hasChild(uuid);
+}
+bool QStdItemModel::contains(QStdItem* item)const
+{
+    return contains(item->uuid());
+}
 
 QString QStdItemModel::filename() const
 {

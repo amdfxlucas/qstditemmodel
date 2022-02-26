@@ -13,10 +13,13 @@ bool reference:: referToSameItem(const reference& ref)const
     // two references compare equal, if they reference the same item in the model
     // eigther by pointer , path or model index
 
-    return (m_path==ref.m_path ||
+  /*  return (m_path==ref.m_path ||
                m_item==ref.m_item ||
              m_index==ref.m_index)
            && this!= &ref; //
+           */
+
+    return (m_item->uuid()==ref.m_item->uuid() )  && this!= &ref;
 }
 
 /*
@@ -24,6 +27,11 @@ inline bool operator==(const reference& a, const reference& b)
 {
     return a.operator==(b);
 }*/
+
+void reference_controller::lock(bool lck)
+{
+    locked=lck;
+}
 
 uint qHash(unsigned long long i)
 {
@@ -46,8 +54,11 @@ reference::reference(QStdItem* i,
     if(i->model())
     {
         m_model =i->model();
-        m_index= i->index();
-        m_path = QStdItemModel::pathFromIndex(m_index);
+
+        if(m_model->contains(item_uuid))
+        {   m_index= i->index();
+            m_path = QStdItemModel::pathFromIndex(m_index);
+        }
     }
 
     connect(this,&reference::validReference,
@@ -66,7 +77,11 @@ void reference_controller::invalidReference(reference* ref)
 {
     // removes an unneded reference after ~StdItemCmd was called
 
+
+    if(!locked)
+    {
     auto c{m_ref.remove(ref->item_uuid,ref) };
+    }
 
 }
 
@@ -90,6 +105,8 @@ reference* reference_controller::new_reference(QStdItem *i,  QStdItem::StdItemCm
 
 void reference_controller::validReference(reference* ref)
 {
+    if(locked){return;}
+
     // precondition: the reference 'ref' must be valid !
     // its path, index, model, and item-pointer
 
