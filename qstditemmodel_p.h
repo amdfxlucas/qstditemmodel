@@ -147,7 +147,7 @@ public:
 
 
     QPair<int, int> position() const;
-    void setChild(int row, int column, QStdItem *item,
+    QStdItem* setChild(int row, int column, QStdItem *item,
                   bool emitChanged = false);
     inline int rowCount() const {
         return rows;
@@ -163,7 +163,7 @@ public:
         QStdItem *par,
         QStdItemModel *mod)
     {
-        setModel(mod);
+       q_func()-> setModel(mod);
         parent = par;
     }
 
@@ -180,6 +180,9 @@ public:
     bool insertColumns(int column, int count, const QList<QStdItem*> &items);
 
     void sortChildren(int column, Qt::SortOrder order);
+
+    bool hasChild(unsigned long long int uuid)const;
+    bool hasChildren()const;
 
     QStdItemModel *model;
     QStdItem *parent;

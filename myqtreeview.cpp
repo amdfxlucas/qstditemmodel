@@ -5,6 +5,7 @@
 #include <QApplication>
 #include "scope_tagger.h"
 #include "qstditemmodel.h"
+#include "reference_controller.h"
 
 void MyQTreeView::paintEvent(QPaintEvent *event)
 {            QTreeView::paintEvent(event);
@@ -50,7 +51,11 @@ void MyQTreeView::mousePressEvent(QMouseEvent *event)
     if (event->button() == Qt::LeftButton)
         dragStartPosition = event->pos();
 
+    //reference_controller::get_instance()->lock(true);
+
     QTreeView::mousePressEvent(event);
+
+    //reference_controller::get_instance()->lock(false);
 }
 
    void MyQTreeView::setExpanded(const Path& path,bool enable)

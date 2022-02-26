@@ -212,6 +212,8 @@ public:
     int columnCount() const;
     void setColumnCount(int columns);
 
+    bool hasChild(unsigned long long int uuid)const;
+
     bool hasChildren() const;
     QStdItem *child(int row, int column = 0) const;
     void setChild(int row, int column, QStdItem *item);

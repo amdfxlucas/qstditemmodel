@@ -45,6 +45,10 @@ public:
    }
 };
 
+bool QStdItemPrivate::hasChildren()const
+{
+    return rows>0 && columns>0;
+}
 
 inline int QStdItemPrivate::childIndex(const QStdItem *child) const
 {
@@ -157,7 +161,7 @@ QPair<int, int> QStdItemPrivate::position() const
 }
 
 
-void QStdItemPrivate::setChild(int row, int column, QStdItem *item,
+QStdItem* QStdItemPrivate::setChild(int row, int column, QStdItem *item,
                                    bool emitChanged)
 {
 
@@ -170,12 +174,12 @@ void QStdItemPrivate::setChild(int row, int column, QStdItem *item,
    if (item == q)
    {
        qWarning("QStdItem::setChild: Can't make an item a child of itself %p",           item);
-         return;
+         return nullptr;
    }
 
    if ((row < 0) || (column < 0))
    {
-       return;
+       return nullptr;
    }
 
    if (rows <= row)
@@ -191,7 +195,7 @@ void QStdItemPrivate::setChild(int row, int column, QStdItem *item,
 
    if (item == oldItem)
   {
-       return;}
+       return nullptr;}
 
    if (model && emitChanged) {
        emit model->layoutAboutToBeChanged();
@@ -206,7 +210,7 @@ void QStdItemPrivate::setChild(int row, int column, QStdItem *item,
        {
            qWarning("QStdItem::setChild: Ignoring duplicate insertion of item %p",            item);
 
-           return;
+           return nullptr;
        }
    }
 
@@ -224,7 +228,7 @@ void QStdItemPrivate::setChild(int row, int column, QStdItem *item,
    { //   oldItem->d_func()->setModel(nullptr);
           oldItem->setModel(nullptr);
    }
-   delete oldItem;
+  // delete oldItem;
 
    if (item)
        item->d_func()->lastKnownIndex = index;
@@ -244,7 +248,7 @@ void QStdItemPrivate::setChild(int row, int column, QStdItem *item,
        }
    }
 
-
+return oldItem;
 }
 
 
@@ -414,6 +418,49 @@ const QMap<int, QVariant> QStdItemPrivate::itemData() const
    return result;
 }
 
+bool QStdItemPrivate::hasChild(unsigned long long int uuid)const
+{
+    auto start{this};
+
+    auto iterate = [&uuid](const auto* start_item)
+    {
+
+        auto iterate_impl = [&uuid](const QStdItemPrivate* start_item,auto& impl)
+        {
+
+
+                if(start_item->uuid() == uuid) return true;
+
+                if(start_item->hasChildren())
+                {
+             for(const auto item : start_item->children)
+            {
+                if(item)
+                {
+                 //  if(item->hasChildren())
+                 //   {
+                 //      if(item->uuid() == uuid) return true;
+
+                      return impl(item->d_func(),impl);
+                //   }
+               //   else
+               //  {
+               //     return item->uuid() == uuid;
+               //   }
+
+                }
+              }
+                }
+
+
+             return false;
+        };
+
+        return iterate_impl(start_item,iterate_impl);
+    };
+
+    return iterate(start);
+}
 
 void QStdItemPrivate::sortChildren(int column, Qt::SortOrder order)
 {

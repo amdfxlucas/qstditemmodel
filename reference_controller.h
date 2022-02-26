@@ -124,9 +124,11 @@ public:
     static reference_controller* get_instance()
     {return &_instance_;}
 
+    void lock(bool lck);
+
 private:
 
-
+    bool locked;
 
     static reference_controller _instance_;
     reference_controller();

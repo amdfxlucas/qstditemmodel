@@ -172,10 +172,11 @@ unsigned long long QStdItem::uuid()const
 QStdItem::~QStdItem()
 {
 
-   //qDebug()<< "QStdItem::~QStdItem()";
+   qDebug()<< "QStdItem::~QStdItem()";
 
    Q_D(QStdItem);
-   for (QStdItem *child : qAsConst(d->children)) {
+   for (QStdItem *child : qAsConst(d->children))
+   {
        if (child)
            child->d_func()->setModel(nullptr);
        delete child;
@@ -762,7 +763,10 @@ void QStdItem::insertColumns(int column, int count)
 
 }
 
-
+bool QStdItem::hasChild(unsigned long long int uuid)const
+{
+    return d_func()->hasChild(uuid);
+}
 
 
 void QStdItem::removeRow(int row)

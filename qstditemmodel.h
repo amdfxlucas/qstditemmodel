@@ -121,7 +121,8 @@ public:
     void saveToFile(const QString& filename= QString()) ;
     void loadFromFile(const QString& filename=QString()  );
 
-
+    bool contains(unsigned long long int uuid)const;
+    bool contains(QStdItem* item)const;
 
     UndoStack* undo_stack() const{return m_stack;};
 
