@@ -122,6 +122,12 @@ void MainWindow::cut()
 void MainWindow::paste()
 {
 
+    const QModelIndex index = view->selectionModel()->currentIndex();
+    QStdItemModel *model = static_cast<QStdItemModel*>(view->model());
+
+
+   view->setCurrentIndex( model->paste(index) );
+
 }
 
 void MainWindow::setCurrentIndex(const QModelIndex &index)

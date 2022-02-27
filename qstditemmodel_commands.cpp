@@ -237,12 +237,87 @@ void  QStdItemModel::CutItemCmd::redo()
 }
 
 
+QStdItemModel::PasteItemCmd::PasteItemCmd(QStdItemModel* m,
+           const QModelIndex& idx,
+           QUndoCommand* p)
+    : QStdItemModelCmd(m,p)
+{
+    m_path= m->pathFromIndex(idx);
+
+
+}
+
+void QStdItemModel::PasteItemCmd::undo()
+{
+    UndoStackLock lock{model()->undo_stack() };
+
+    on_scope_exit t{ [this](){ //model()->undo_stack()->beginMacro("QStdItemModel::PasteItemCmd::undo");
+                       qDebug().noquote()<< "<QStdItemModel::PasteItemCmd::undo>";},
+                     [this](){// model()->undo_stack()->endMacro();
+                       qDebug().noquote()<< "</QStdItemModel::PasteItemCmd::undo>";}
+                   };
+
+    auto index{model()->pathToIndex(m_path)};
+
+    auto cutItem{model()->d_func()->cut_item};
+    Q_ASSERT(cutItem==nullptr);
+
+   if (!index.isValid() )
+   {
+       m_ret_path=m_path;
+   }
+
+   QStdItem* child{nullptr};
+
+   QStdItem *sibling = model()->itemFromIndex(index);
+
+   Q_ASSERT(sibling);
+
+   QStdItem *parent = sibling->parent();
+   if(parent==nullptr){parent=model()->invisibleRootItem();}
+
+
+    int row = sibling->row() + 1;
+
+   model()->beginRemoveRows(index.parent(), row, row);
+
+   if(is_single_column)
+     {
+       child=parent->takeChild(row);
+       parent->removeRow(row);
+   }  else
+   {
+       parent->takeChild(row);
+   }
+
+
+
+   model()->d_func()->cut_item = child;
+
+   model()->endRemoveRows();
+
+
+     m_ret_path= model()->pathFromIndex(model()->createIndex(row-1, 0, parent) );
+
+}
+
 void QStdItemModel::PasteItemCmd::redo()
 {
+    UndoStackLock lock{model()->undo_stack() };
+
+    on_scope_exit t{ [this](){ //model()->undo_stack()->beginMacro("QStdItemModel::PasteItemCmd::redo");
+                       qDebug().noquote()<< "<QStdItemModel::PasteItemCmd::redo>";},
+                     [this](){// model()->undo_stack()->endMacro();
+                       qDebug().noquote()<< "</QStdItemModel::PasteItemCmd::redo>";}
+                   };
+
+
      auto index{model()->pathToIndex(m_path)};
-/*
+
+     auto cutItem{model()->d_func()->cut_item};
+
     if (!index.isValid() || !cutItem)
-    {//    return index;
+    {
         m_ret_path=m_path;
     }
 
@@ -252,22 +327,33 @@ void QStdItemModel::PasteItemCmd::redo()
 
     QStdItem *parent = sibling->parent();
 
-    Q_ASSERT(parent);
+    if(parent==nullptr){parent=model()->invisibleRootItem();}
+
+        auto cols{parent->columnCount()};
+        is_single_column= cols==1;
+
 
    // int row = parent->rowOfChild(sibling) + 1;
      int row = sibling->row() + 1;
 
     model()->beginInsertRows(index.parent(), row, row);
 
-    parent->setChild(row, cutItem);
+    if(is_single_column)
+      {
+        parent->insertRow(row,cutItem);
+    }  else
+    {
+        parent->setChild(row, cutItem);
+    }
+
 
     QStdItem *child = cutItem;
-    cutItem = 0;
+    model()->d_func()->cut_item=nullptr;
 
     model()->endInsertRows();
 
     // return model()->createIndex(row, 0, child);
 
     m_ret_path= model()->pathFromIndex(model()->createIndex(row, 0, child) );
-*/
+
 }

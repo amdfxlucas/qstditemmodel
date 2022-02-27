@@ -193,6 +193,22 @@ bool QStdItemModel::hasCutItem() const
 QModelIndex QStdItemModel::paste(const QModelIndex &index)
 {
 
+    on_scope_exit t{ [this](){ qDebug().noquote() <<"< QStdItemModel::paste Macro >";
+                             undo_stack()->beginMacro("QStdItemModel::paste");},
+                     [this](){   qDebug().noquote()<< "</ QStdItemModel::paste Macro>";
+                                 undo_stack()->endMacro();}
+                   };
+
+     auto paste_cmd = new PasteItemCmd(this,index) ;
+     undo_stack()->push(paste_cmd);
+
+     if(paste_cmd)
+     {
+         return paste_cmd->returnValue().value<QModelIndex>();
+     }
+
+
+   return QModelIndex();
 }
 
 /*!

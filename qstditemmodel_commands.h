@@ -49,17 +49,14 @@ class QStdItemModel::PasteItemCmd
         :public QStdItemModelCmd
 {private:
 
+    bool is_single_column{false};
     Path m_ret_path; // return value of QStdItemModel::paste(..)
     Path m_path;    // path to model index where the item was removed
     QStdItemModel* m_model;
 public:
     PasteItemCmd(QStdItemModel* m,
                const QModelIndex& idx,
-               QUndoCommand* p=nullptr)
-        : QStdItemModelCmd(m,p)
-    {
-        m_path= m->pathFromIndex(idx);
-    }
+               QUndoCommand* p=nullptr);
 
     virtual void  undo()override;
     virtual void redo() override;
