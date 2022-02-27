@@ -13,11 +13,7 @@ bool reference:: referToSameItem(const reference& ref)const
     // two references compare equal, if they reference the same item in the model
     // eigther by pointer , path or model index
 
-  /*  return (m_path==ref.m_path ||
-               m_item==ref.m_item ||
-             m_index==ref.m_index)
-           && this!= &ref; //
-           */
+
 
     return (m_item->uuid()==ref.m_item->uuid() )  && this!= &ref;
 }

@@ -93,6 +93,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(removeColumnAction, &QAction::triggered, this, &MainWindow::removeColumn);
     connect(insertChildAction, &QAction::triggered, this, &MainWindow::insertChild);
 
+
+
     connect(undo_action,&QAction::triggered,this,&MainWindow::undo);
     connect(redo_action,&QAction::triggered,this,&MainWindow::redo);
 
@@ -102,9 +104,31 @@ MainWindow::MainWindow(QWidget *parent)
     connect(saveAction,&QAction::triggered, this,&MainWindow::fileSave);
     connect(saveAsAction,&QAction::triggered, this,&MainWindow::fileSaveAs);
 
+    connect(cutItemAction,&QAction::triggered,this,&MainWindow::cut);
+    connect(pasteItemAction,&QAction::triggered,this,&MainWindow::paste);
+
     updateActions();
 }
 
+void MainWindow::cut()
+{
+    const QModelIndex index = view->selectionModel()->currentIndex();
+    QStdItemModel *model = static_cast<QStdItemModel*>(view->model());
+
+
+   view->setCurrentIndex( model->cut(index) );
+}
+
+void MainWindow::paste()
+{
+
+    const QModelIndex index = view->selectionModel()->currentIndex();
+    QStdItemModel *model = static_cast<QStdItemModel*>(view->model());
+
+
+   view->setCurrentIndex( model->paste(index) );
+
+}
 
 void MainWindow::setCurrentIndex(const QModelIndex &index)
 {
@@ -275,26 +299,25 @@ void MainWindow::insertChild()
     const QModelIndex index = view->selectionModel()->currentIndex();
     QStdItemModel *model = static_cast<QStdItemModel*>(view->model());
 
-
+    on_scope_exit tt{
+        [this](){ QString text{"insertChildAction"};
+            this->model->undo_stack()->beginMacro("MainWindow::"+text); },
+                     [this](){this->  model->undo_stack()->endMacro();}};
     scope_tagger t{ "MainWindow::insertChild"};
 
-    QString text{"insertChildAction"};
-    model->undo_stack()->beginMacro("MainWindow::"+text);
+
 
     if (model->columnCount(index) == 0)
     {
         if (! (model->insertColumn(0, index)) )
-        {
-            model->undo_stack()->endMacro();
-            return;
+        {      return;
         }
     }
 
 
 
     if(!(model->insertRow(0, index) ) )
-    {       model->undo_stack()->endMacro();
-        return;
+    {return;
     }
 
     for (int column = 0; column < model->columnCount(index); ++column)
@@ -308,9 +331,6 @@ void MainWindow::insertChild()
 
     view->selectionModel()->setCurrentIndex(model->index(0, 0, index),
                                             QItemSelectionModel::ClearAndSelect);
-
-
-    model->undo_stack()->endMacro();
       updateActions();
 
 }
@@ -340,12 +360,13 @@ bool MainWindow::insertColumn()
 void MainWindow::insertRow()
 {
    scope_tagger t{"MainWindow::insertRow"};
+   on_scope_exit tt( [this](){ model->undo_stack()->beginMacro("MainWindow::insertRow");
+                                qDebug()<< "<begin Macro MainWindow::insertRow>";},
+   [this](){  model->undo_stack()->endMacro();
+                qDebug().noquote() << "</begin Macro MainWindow::insertRow>"; } );
 
     const QModelIndex index = view->selectionModel()->currentIndex();
     QStdItemModel *model = static_cast<QStdItemModel*>(view->model());
-
-
-    model->undo_stack()->beginMacro("MainWindow::insertRow");
 
     if(index.row()+1 > model->rowCount())
     {
@@ -362,7 +383,7 @@ void MainWindow::insertRow()
         const QModelIndex child = model->index(index.row() + 1, column, index.parent());
         model->setData(child, QVariant(tr("[No data]")), Qt::EditRole);
     }
-    model->undo_stack()->endMacro();
+
 
 }
 
