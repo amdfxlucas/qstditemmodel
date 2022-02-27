@@ -201,11 +201,11 @@ this decision is represented by the 'resize_columns' data member
       // ACHTUNG: DAS stimmt nicht mehr !
       // policy: resize the column-count to fit all items into a row ,or not
 
-
+      int item_count;
       int prev_col_count;
       int prev_row_count;
       int m_row; // at which row ,the insertion shall take place
-      QList<QStdItem> m_items; // the items to be inserted
+      QList<QStdItem*> m_items; // the items to be inserted
       bool is_valid_cmd{true};
       bool insert_past_end{false};
 
@@ -239,9 +239,10 @@ this decision is represented by the 'resize_columns' data member
   private:
       int m_column;
       int m_count{-1};
-      QList<QStdItem> m_items;
+      QList<QStdItem*> m_items;
       int prev_row_count;
       int prev_col_count;
+      int item_count;
       bool is_valid_cmd{true};
       bool resize_rows{false};
       bool insert_past_end{false};

@@ -529,10 +529,10 @@ m_reference()->validReference(m_reference());
 
      UndoStackLock lock{this_model() ? this_model()->undo_stack(): nullptr}; // RAII class
 
-                        QList<QStdItem*> _pitems;
+                    //    QList<QStdItem*> _pitems;
 
-                                       for(auto& i :m_items)
-                                       {_pitems.append(&i);}
+                      //                 for(auto& i :m_items)
+                      //                 {_pitems.append(&i);}
 
        if(!is_valid_cmd)
       {     return;}
@@ -546,7 +546,7 @@ m_reference()->validReference(m_reference());
           {   item->setRowCount(m_items.count());
          }
 
-          setSuccessFlag(  d->insertColumns(m_column, 1, _pitems) );
+          setSuccessFlag(  d->insertColumns(m_column, 1, m_items) );
 
      } // VARIANTE II Command
      else
@@ -612,17 +612,20 @@ m_reference()->validReference(m_reference());
                      const QList<QStdItem*>& items,
                      QUndoCommand* parent)
          : StdItemCmd(i,parent),
-           m_column(col)
+           m_column(col),
+           item_count(items.count()),
+           m_items(items)
      {
          setText(QString("InsertColumnCmd TypI - col: %1,count: %2").arg(col).arg(items.count()));
+
 
          prev_row_count = i->rowCount();
           prev_col_count=i->columnCount();
 
          // the commands stores deep copies of the inserted items
          // not pointer
-         for(auto* it : items)
-         {   m_items.emplace_back(*it);      }
+       //  for(auto* it : items)
+       //  {   m_items.emplace_back(*it);      }
 
 
          if(! ( (m_column < 0) || (m_column >prev_col_count) ) )
@@ -651,14 +654,17 @@ m_reference()->validReference(m_reference());
       {
           // if (m_column < 0)           return;
 
+          m_items= item->takeColumn(m_column);
+          // save the items before any of the subsequent command frees them
+
           if (resize_rows)
           {    item->setRowCount(prev_row_count );
           }
 
         //  d->removeColumns(m_column, m_items.count() );
-            item->removeColumns(m_column, m_items.count() );
+            item->removeColumns(m_column,item_count );
       }else
-          // VARIANTE II Command
+          // VARIANTE II Command [no items to save here, since only nullptr were inserted in the first place]
       {
 
          // if(prev_col_count< m_column)
@@ -688,10 +694,10 @@ m_reference()->validReference(m_reference());
 
      UndoStackLock lock{this_model() ? this_model()->undo_stack() : nullptr}; // RAII class
 
-   QList<QStdItem*> _pitems;
+  // QList<QStdItem*> _pitems;
 
-                 for(auto& i :m_items)
-                 {_pitems.append(&i);}
+              //   for(auto& i :m_items)
+              //   {_pitems.append(&i);}
 
         // VARIANTE I Command
       if(m_count ==-1)
@@ -705,13 +711,13 @@ m_reference()->validReference(m_reference());
 
 
         //  if (prev_col_count < m_items.count()) // das macht ja jetzt 'resize_columns'
-          item->setColumnCount(m_items.count());
+          item->setColumnCount(item_count);
 
            // increases column count if neccessary
-          setSuccessFlag( d->insertRows(m_row, 1, _pitems) );
+          setSuccessFlag( d->insertRows(m_row, 1, m_items) );
           }else
           {
-          setSuccessFlag( d->insertRows(m_row, _pitems) );
+          setSuccessFlag( d->insertRows(m_row, m_items) );
          }
       }
       else
@@ -741,7 +747,9 @@ m_reference()->validReference(m_reference());
                   QUndoCommand* parent)
          :StdItemCmd(it,parent) ,
            resize_columns(do_resize),
-           m_row(row)
+           m_row(row),
+           m_items(items),
+           item_count(items.count())
      {
          setText(QString("InsertRowCmd Typ I - row: %1, count: %2, do_resize: %3").arg(row).arg(items.count() ).arg(do_resize) );
 
@@ -750,8 +758,8 @@ m_reference()->validReference(m_reference());
 
          // the commands stores deep copies of the inserted items
          // not pointer
-         for(auto* it : items)
-         {   m_items.emplace_back(*it);      }
+        // for(auto* it : items)
+        // {   m_items.emplace_back(*it);      }
 
 
          if(prev_col_count< m_items.count())
@@ -803,18 +811,25 @@ m_reference()->validReference(m_reference());
 
           if(resize_columns)
           {
-              if (prev_col_count < m_items.count())
-              item->setColumnCount(prev_col_count);
+              m_items = item->takeRow(m_row);
 
-             item->removeRows(m_row,m_items.count()) ;
+              if (prev_col_count < item_count )
+              {item->setColumnCount(prev_col_count);
+              }
+
+
+              item->removeRows(m_row,m_items.count()) ;
           }
           else
           {
-               item->removeRows(m_row,m_items.count()) ;
+              m_items = item->takeRow(m_row);
+
+               item->removeRows(m_row,item_count ) ;
           }
      }
      else
          // es handelt sich bei diesem Cmd um einen 'insertRows(int row,int count )' Aufruf
+         // dann müssen nämlich keine items in m_items gerettet werden, weil nur nullptr eingefügt wurde
          // VARIANTE II Command
      {
 
