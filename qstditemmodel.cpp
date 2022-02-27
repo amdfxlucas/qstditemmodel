@@ -1684,17 +1684,13 @@ Path QStdItemModel::pathFromIndex(const QModelIndex &index)
 
 QModelIndex QStdItemModel::pathToIndex(const Path &path)
 {
-<<<<<<< HEAD
-   QModelIndex iter;
-=======
+
     UndoStackLock lck{undo_stack()};
 
      QModelIndex iter;
     //QModelIndex iter{-1,-1,invisibleRootItem(),this};
     // auto iter{createIndex(-1,-1,invisibleRootItem() )};
 
-
->>>>>>> a8d7dde2114c49ef6f920c99772d2675f27232c7
    for (int i=0;i<path.size();i++)
    {
        iter = this->index(path[i].first, path[i].second, iter);
