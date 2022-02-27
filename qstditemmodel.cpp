@@ -40,6 +40,7 @@
 
 
 #include "qstditemmodel.h"
+#include "qstditemmodel_commands.h"
 #include "qstditemmodel_p.h"
 
 #include <QtCore/qdatetime.h>
@@ -162,7 +163,11 @@ Path QStdItemModel::parentPath(const Path& p )
 QModelIndex QStdItemModel::cut(const QModelIndex &index)
 {
 
-    undo_stack()->beginMacro("QStdItemModel::cut");
+   on_scope_exit t{ [this](){ qDebug().noquote() <<"< QStdItemModel::cut Macro >";
+                            undo_stack()->beginMacro("QStdItemModel::cut");},
+                    [this](){   qDebug().noquote()<< "</ QStdItemModel::cut Macro>";
+                                undo_stack()->endMacro();}
+                  };
 
     auto cut_cmd = new CutItemCmd(this,index) ;
     undo_stack()->push(cut_cmd);
@@ -176,7 +181,7 @@ QModelIndex QStdItemModel::cut(const QModelIndex &index)
     }
 
 
-    undo_stack()->endMacro();
+  return QModelIndex();
 
 }
 

@@ -20,6 +20,7 @@ INCLUDEPATH+="/home/lucas/Qt/6.1.3/gcc_64/include/QtCore/6.1.3"
 # FORMS       = mainwindow.ui
 HEADERS     = mainwindow.h \
     aqp.hpp \
+    qstditemmodel_commands.h \
     qundogroup.h \
     myqtreeview.h \
     path.h \

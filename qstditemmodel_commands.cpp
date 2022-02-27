@@ -1,4 +1,4 @@
-#include "qstditemmodel.h"
+#include "qstditemmodel_commands.h"
 #include "qstditemmodel_p.h"
 #include "scope_tagger.h"
 
@@ -83,17 +83,29 @@ QVariant QStdItemModel::QStdItemModelCmd::returnValue()const
        // delete m_cutItemBackup;
    }
 
+   QStdItemModel::CutItemCmd::CutItemCmd(QStdItemModel* m,
+              const QModelIndex& idx,
+              QUndoCommand* p)
+       : QStdItemModelCmd(m,p)
+   {
+       m_path= m->pathFromIndex(idx);
+       is_index_valid = (idx.isValid() )? true:false;
+
+   }
+
 void QStdItemModel::CutItemCmd::undo()
 {
     UndoStackLock lock{model()->undo_stack() };
 
-    on_scope_exit t{ [this](){ model()->undo_stack()->beginMacro("QStdItemModel::CutItemCmd::undo");
+    on_scope_exit t{ [this](){ //model()->undo_stack()->beginMacro("QStdItemModel::CutItemCmd::undo");
                        qDebug().noquote()<< "<QStdItemModel::CutItemCmd::undo>";},
-                     [this](){model()->undo_stack()->endMacro();
-                       qDebug().noquote()<< "<QStdItemModel::CutItemCmd::undo>";}
+                     [this](){// model()->undo_stack()->endMacro();
+                       qDebug().noquote()<< "</QStdItemModel::CutItemCmd::undo>";}
                    };
 
-      auto parent{model()->pathToIndex(model()->parentPath(m_path) ) };
+    auto p_path{model()->parentPath(m_path)};
+
+      auto parent_index{model()->pathToIndex(p_path ) };
 
       if(!is_index_valid)
       {
@@ -102,10 +114,25 @@ void QStdItemModel::CutItemCmd::undo()
 
       int row{m_path.last().first};
 
-      model()->beginInsertRows(parent,row,row);
+      model()->beginInsertRows(parent_index,row,row);
 
       // reinsert the models cut_item, right where we removed it (in redo() )
-        model()->itemFromIndex(parent)->setChild(row,model()->d_func()->cut_item);
+      // QStdItem::setChild delegates to SetChildCmd::redo which delegates to QStdItemPrivate::setChild
+      // which resizes rows & columns to fit its new child if neccessary
+        auto parent{model()->itemFromIndex(parent_index)};
+        if(parent==nullptr) {parent= model()->invisibleRootItem();}
+
+        if(is_parent_single_column)
+        {
+            auto cut_item{model()->d_func()->cut_item};
+            parent->insertRow(row,cut_item);
+        }
+        else
+        {
+
+                parent->setChild(row,model()->d_func()->cut_item);
+        }
+
 
       model()->endInsertRows();
 
@@ -128,9 +155,9 @@ void  QStdItemModel::CutItemCmd::redo()
 {
     UndoStackLock lock{model()->undo_stack() };
 
-  on_scope_exit t{ [this](){ model()->undo_stack()->beginMacro("QStdItemModel::CutItemCmd::redo");
+  on_scope_exit t{ [this](){// model()->undo_stack()->beginMacro("QStdItemModel::CutItemCmd::redo");
                    qDebug().noquote()<< "<QStdItemModel::CutItemCmd::redo>";},
-                   [this](){model()->undo_stack()->endMacro();
+                   [this](){// model()->undo_stack()->endMacro();
                    qDebug().noquote()<<"</QStdItemModel::CutItemCmd::redo>";}
                  };
 
@@ -155,20 +182,37 @@ void  QStdItemModel::CutItemCmd::redo()
 
     Q_ASSERT(parent);
 
+    auto rows{parent->rowCount()};
+    auto cols{parent->columnCount()};
+    is_parent_single_column= cols==1;
+
  //   int row = parent->rowOfChild(model()->d_func()->cut_item );
     int row= model()->d_func()->cut_item->row();
+
+    QStdItem* child;
 
     Q_ASSERT(row == index.row());
 
     model()->beginRemoveRows(index.parent(), row, row);
 
-        QStdItem *child = parent->takeChild(row);
+
+    if(is_parent_single_column)
+      {
+         auto items = parent->takeRow(row);
+
+         Q_ASSERT(!items.isEmpty());
+
+          child = items.takeFirst();
+    }else
+    {
+         child = parent->takeChild(row);
+    }
 
     model()->endRemoveRows();
 
     Q_ASSERT(child == model()->d_func()->cut_item);
 
-    child = 0; // Silence compiler unused variable warning
+   // child = 0; // Silence compiler unused variable warning
 
     if (row > 0) {
         --row;
