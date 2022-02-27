@@ -71,6 +71,8 @@ private:
     class SetDataCmd;
 
 public:
+
+    // gets the items unique identifier
     unsigned long long uuid()const ;
 
     QStdItem();

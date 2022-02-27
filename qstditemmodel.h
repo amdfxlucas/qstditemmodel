@@ -77,40 +77,20 @@ class TEST_LIB_EXPORT QStdItemModel
     Q_OBJECT
     Q_PROPERTY(int sortRole READ sortRole WRITE setSortRole BINDABLE bindableSortRole)
 
+    class CutItemCmd;
+    class PasteItemCmd;
 
+    class QStdItemModelCmd    ; // base class for commands
 
-    class SetHHeaderItemCmd
-            : public QUndoCommand
-    {
-    public:
-        SetHHeaderItemCmd(QStdItemModel* model,
-                          int col,
-                          QStdItem* item,
-                          QUndoCommand* parent=nullptr)
-            : QUndoCommand(parent),
-              m_item(item),
-              _this_model_(model),
-              m_column(col)
-        {
-            prev_col_count=model->columnCount();
-            if(prev_col_count<=col){change_col_count=true;}
-        }
-        void undo() override;
-        void redo() override;
-
-    private:
-        void impl(bool un_or_redo);
-        int m_column;
-        int prev_col_count;
-        QStdItem* m_item;
-        bool change_col_count{false};
-        QStdItemModel* _this_model_;
-    };
+    class SetVHeaderItemCmd;
+    class SetHHeaderItemCmd;
 
 
 public:
  static   Path pathFromIndex(const QModelIndex &index);
     QModelIndex pathToIndex(const Path &path);
+
+    static Path parentPath(const Path& );
 
     QString filename() const ;
     void setFilename(const QString &filename);
@@ -123,6 +103,11 @@ public:
 
     bool contains(unsigned long long int uuid)const;
     bool contains(QStdItem* item)const;
+
+
+    QModelIndex cut(const QModelIndex &index);
+    bool hasCutItem() const ;
+    QModelIndex paste(const QModelIndex &index);
 
     UndoStack* undo_stack() const{return m_stack;};
 
@@ -173,6 +158,9 @@ public:
     QStdItem *item(int row, int column = 0) const;
     void setItem(int row, int column, QStdItem *item);
     inline void setItem(int row, QStdItem *item);
+
+    // warum gibt es nicht 'insertItem(const QModelIndex& index, QStdItem* item)' ??
+
     QStdItem *invisibleRootItem() const;
 
     QStdItem *horizontalHeaderItem(int column) const;
@@ -268,6 +256,7 @@ inline bool QStdItemModel::insertColumn(int acolumn, const QModelIndex &aparent)
 Q_GUI_EXPORT QDataStream &operator>>(QDataStream &in, QStdItem &item);
 Q_GUI_EXPORT QDataStream &operator<<(QDataStream &out, const QStdItem &item);
 #endif
+
 
 QT_END_NAMESPACE
 
