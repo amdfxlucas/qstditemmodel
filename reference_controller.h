@@ -126,6 +126,9 @@ public:
 
     void lock(bool lck);
 
+public slots:
+    void modelDestroyed(QObject*); // frees all references into this model
+
 private:
 
     bool locked;

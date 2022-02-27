@@ -239,11 +239,24 @@ void  QStdItemModel::CutItemCmd::redo()
 
 QStdItemModel::PasteItemCmd::PasteItemCmd(QStdItemModel* m,
            const QModelIndex& idx,
+           Behaviour b,
            QUndoCommand* p)
-    : QStdItemModelCmd(m,p)
+    : QStdItemModelCmd(m,p),
+      strategy(b)
 {
+
     m_path= m->pathFromIndex(idx);
 
+
+}
+
+QStdItemModel::PasteItemCmd::PasteItemCmd(QStdItemModel* m,
+           const Path& pth,
+           Behaviour b,
+           QUndoCommand* p)
+    : QStdItemModelCmd(m,p),
+      strategy(b),m_path(pth)
+{
 
 }
 
@@ -316,44 +329,92 @@ void QStdItemModel::PasteItemCmd::redo()
 
      auto cutItem{model()->d_func()->cut_item};
 
-    if (!index.isValid() || !cutItem)
+
+    switch(strategy)
     {
-        m_ret_path=m_path;
+    case AsSibling:
+    {
+
+        if (!index.isValid() || !cutItem)
+        {
+            m_ret_path=m_path;
+        }
+
+        QStdItem *sibling = model()->itemFromIndex(index);
+
+        Q_ASSERT(sibling);
+
+        QStdItem *parent = sibling->parent();
+
+        if(parent==nullptr){parent=model()->invisibleRootItem();}
+
+            auto cols{parent->columnCount()};
+            is_single_column= cols==1;
+
+
+       // int row = parent->rowOfChild(sibling) + 1;
+         int row = sibling->row() + 1;
+
+        model()->beginInsertRows(index.parent(), row, row);
+
+        if(is_single_column)
+          {
+            parent->insertRow(row,cutItem);
+        }  else
+        {
+            parent->setChild(row, cutItem);
+        }
+
+
+        QStdItem *child = cutItem;
+        model()->d_func()->cut_item=nullptr;
+
+        model()->endInsertRows();
+
+        // return model()->createIndex(row, 0, child);
+
+        m_ret_path= model()->pathFromIndex(model()->createIndex(row, 0, child) );
+
+        break;
     }
+    case AsChild:
+    {
+        if (!index.isValid() || !cutItem)
+        {
+            m_ret_path=m_path;
+        }
 
-    QStdItem *sibling = model()->itemFromIndex(index);
+        QStdItem *parent_item = model()->itemFromIndex(index);
 
-    Q_ASSERT(sibling);
+        Q_ASSERT(parent_item);
 
-    QStdItem *parent = sibling->parent();
-
-    if(parent==nullptr){parent=model()->invisibleRootItem();}
-
-        auto cols{parent->columnCount()};
+        auto cols{parent_item->columnCount()};
         is_single_column= cols==1;
 
 
-   // int row = parent->rowOfChild(sibling) + 1;
-     int row = sibling->row() + 1;
 
-    model()->beginInsertRows(index.parent(), row, row);
+     int row = parent_item->rowCount();
 
-    if(is_single_column)
-      {
-        parent->insertRow(row,cutItem);
-    }  else
-    {
-        parent->setChild(row, cutItem);
-    }
+    model()->beginInsertRows(index, row, row);
+
+        parent_item->appendRow(cutItem);
 
 
-    QStdItem *child = cutItem;
     model()->d_func()->cut_item=nullptr;
 
     model()->endInsertRows();
 
-    // return model()->createIndex(row, 0, child);
 
-    m_ret_path= model()->pathFromIndex(model()->createIndex(row, 0, child) );
+        m_ret_path= model()->pathFromIndex(model()->createIndex(row, 0, cutItem) );
+
+        break;
+    }
+    case Absolute:
+    {
+        break;
+    }
+    }
+
+
 
 }

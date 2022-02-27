@@ -51,6 +51,7 @@
 #include <QtCore/qpair.h>
 #include <QtCore/qvariant.h>
 #include <QtCore/qstringlist.h>
+#include <QTimer>
 #include <QtCore/qbitarray.h>
 #include <QtCore/qmimedata.h>
 #include <QtCore/qiodevice.h>
@@ -108,6 +109,16 @@ QStdItemModel::QStdItemModel(QObject *parent)
     //d->root->d_func()->setModel(this);
     d->root->setModel(this);
        m_stack->endMacro();
+
+  QTimer::singleShot(0, this, SLOT(connectRefCtrl()));
+//       connect(this,&QObject::destroyed,reference_controller::get_instance(),
+//               &reference_controller::modelDestroyed);
+}
+
+void QStdItemModel::connectRefCtrl()
+{
+    connect(this,&QObject::destroyed,reference_controller::get_instance(),
+                   &reference_controller::modelDestroyed);
 }
 
 /*!
@@ -128,6 +139,11 @@ QStdItemModel::QStdItemModel(int rows, int columns, QObject *parent)
   //  d->root->d_func()->setModel(this);
       d->root->setModel(this);
     m_stack->endMacro();
+
+      QTimer::singleShot(0, this, SLOT(connectRefCtrl()));
+
+ //   connect(this,&QObject::destroyed,reference_controller::get_instance(),
+ //           &reference_controller::modelDestroyed);
 }
 
 
@@ -137,6 +153,11 @@ QStdItemModel::QStdItemModel(QStdItemModelPrivate &dd, QObject *parent)
     Q_D(QStdItemModel);
      m_stack= new UndoStack(this);
     d->init();
+
+
+      QTimer::singleShot(0, this, SLOT(connectRefCtrl()));
+  //  connect(this,&QObject::destroyed,reference_controller::get_instance(),
+  //          &reference_controller::modelDestroyed);
 }
 
 /*!
@@ -144,6 +165,8 @@ QStdItemModel::QStdItemModel(QStdItemModelPrivate &dd, QObject *parent)
 */
 QStdItemModel::~QStdItemModel()
 {
+
+
     Q_D(QStdItemModel);
     delete d->itemPrototype;
     qDeleteAll(d->columnHeaderItems);
@@ -193,7 +216,7 @@ bool QStdItemModel::hasCutItem() const
     return d_func()->hasCutItem();
 }
 
-QModelIndex QStdItemModel::paste(const QModelIndex &index)
+QModelIndex QStdItemModel::paste(const QModelIndex &index,Behaviour b)
 {
 
     on_scope_exit t{ [this](){ qDebug().noquote() <<"< QStdItemModel::paste Macro >";
@@ -202,7 +225,7 @@ QModelIndex QStdItemModel::paste(const QModelIndex &index)
                                  undo_stack()->endMacro();}
                    };
 
-     auto paste_cmd = new PasteItemCmd(this,index) ;
+     auto paste_cmd = new PasteItemCmd(this,index,b) ;
      undo_stack()->push(paste_cmd);
 
      if(paste_cmd)

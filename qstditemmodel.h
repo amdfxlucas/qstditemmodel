@@ -76,7 +76,7 @@ class TEST_LIB_EXPORT QStdItemModel
 {
     Q_OBJECT
     Q_PROPERTY(int sortRole READ sortRole WRITE setSortRole BINDABLE bindableSortRole)
-
+protected:
     class CutItemCmd;
     class PasteItemCmd;
 
@@ -85,8 +85,12 @@ class TEST_LIB_EXPORT QStdItemModel
     class SetVHeaderItemCmd;
     class SetHHeaderItemCmd;
 
+private slots:
+    void connectRefCtrl();
 
 public:
+    enum Behaviour {AsChild,AsSibling,Absolute};
+
  static   Path pathFromIndex(const QModelIndex &index);
     QModelIndex pathToIndex(const Path &path);
 
@@ -107,7 +111,7 @@ public:
 
     QModelIndex cut(const QModelIndex &index);
     bool hasCutItem() const ;
-    QModelIndex paste(const QModelIndex &index);
+    QModelIndex paste(const QModelIndex &index,Behaviour b = AsSibling);
 
     UndoStack* undo_stack() const{return m_stack;};
 

@@ -28,6 +28,25 @@ void reference_controller::lock(bool lck)
     locked=lck;
 }
 
+void reference_controller::modelDestroyed(QObject* m)
+{
+    auto deleted_model{dynamic_cast<QStdItemModel*>(m)};
+
+    auto i=m_ref.begin();
+    auto end{m_ref.end()};
+
+    while(i!=end )
+    {
+        if( i.value() ->m_model == deleted_model  )
+        {
+           auto count{m_ref.remove(i.key(),i.value())};
+           Q_ASSERT(count==1);
+        }
+        ++i;
+    }
+
+}
+
 uint qHash(unsigned long long i)
 {
     return i;

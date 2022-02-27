@@ -141,7 +141,7 @@ QStdItem::RemoveColumnsCmd::  ~RemoveColumnsCmd()
        auto item{ m_items.takeLast()};
        if(!item){break;}
      //  item->d_func()->setModel(nullptr);
-       item->setModel(nullptr);
+       // item->setModel(nullptr);
 
     //   delete item;
    }
@@ -165,8 +165,8 @@ QStdItem::RemoveRowsCmd::~RemoveRowsCmd()
        auto item{ m_items.takeLast()};
       // if(!item){break;}
         if(!item){continue;}
-       //item->d_func()->setModel(nullptr);
-       item->setModel(nullptr);
+    //   item->d_func()->setModel(nullptr);
+       // item->setModel(nullptr);
 
    //    delete item;
    }

@@ -51,16 +51,33 @@ class QStdItemModel::PasteItemCmd
 
     bool is_single_column{false};
     Path m_ret_path; // return value of QStdItemModel::paste(..)
-    Path m_path;    // path to model index where the item was removed
+    Path m_path;
+    // path to model index where the item will be inserted
+    // if strategy is 'AsChild' , the item pointed to by m_path
+    // will become the cut_item's parent
+    // if it is 'AsSibling' , the item will be inserted as a sibling
+    // of the item pointed to by m_path
+
     QStdItemModel* m_model;
+
 public:
+
+
+
     PasteItemCmd(QStdItemModel* m,
                const QModelIndex& idx,
+                 Behaviour b = AsSibling,
+               QUndoCommand* p=nullptr);
+
+    PasteItemCmd(QStdItemModel* m,
+               const Path& idx,
+                 Behaviour b= AsSibling,
                QUndoCommand* p=nullptr);
 
     virtual void  undo()override;
     virtual void redo() override;
-
+private:
+    Behaviour strategy;
 
 };
 
