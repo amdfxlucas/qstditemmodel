@@ -85,11 +85,18 @@ protected:
     class SetVHeaderItemCmd;
     class SetHHeaderItemCmd;
 
+    using item_cmd_t = QStdItem::StdItemCmd;
+    using set_item_data_cmd_t =  QStdItem::SetDataCmd;
+    using remove_row_cmd_t = QStdItem::RemoveRowsCmd;
+
 private slots:
     void connectRefCtrl();
 
 public:
     enum Behaviour {AsChild,AsSibling,Absolute};
+
+    void  iterate(const auto& func,const QModelIndex & index=QModelIndex()) const;
+    virtual QModelIndexList find(const QModelIndex& start_node, int role, const QVariant& key) const;
 
  static   Path pathFromIndex(const QModelIndex &index);
     QModelIndex pathToIndex(const Path &path);
@@ -240,6 +247,46 @@ private:
     Q_PRIVATE_SLOT(d_func(), void _q_emitItemChanged(const QModelIndex &topLeft,
                                                      const QModelIndex &bottomRight))
 };
+
+
+
+void  QStdItemModel::iterate(const auto& func,const QModelIndex & index) const
+ {
+    if (index.isValid())
+    {
+    // Do action here
+     func(this->itemFromIndex(index));
+   // func(static_cast<QStdItem*>(index.internalPointer()) );
+
+    }
+
+    if (!this->hasChildren(index)
+            // || (index.flags() &    Qt::ItemNeverHasChildren)
+            )
+    {
+        return;
+    }
+
+    auto item{this->itemFromIndex(index)};
+    if(item)
+    {
+    // auto rows = this->rowCount(index);
+        auto rows = item->rowCount();
+
+    for (int i = 0; i < rows; ++i)
+     {/*
+        auto child_idx{this->index(i, 0, index)};
+        iterate(func,child_idx);*/
+
+        auto child{item->child(i,0)};
+        if(child)
+        {iterate(func,child->index());
+        }
+    }
+    }
+}
+
+
 
 inline void QStdItemModel::setItem(int arow, QStdItem *aitem)
 { setItem(arow, 0, aitem); }

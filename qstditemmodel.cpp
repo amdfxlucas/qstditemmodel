@@ -115,6 +115,28 @@ QStdItemModel::QStdItemModel(QObject *parent)
 //               &reference_controller::modelDestroyed);
 }
 
+
+  QModelIndexList QStdItemModel::find(const QModelIndex& start_node, int role, const QVariant& key) const
+{
+    QModelIndexList hits;
+    auto search_key = [this,&hits,&role,&key](const auto* item)
+    {
+        if(item)
+        {
+            if(item->data(role)==key)
+            {
+                hits<<item->index();
+            }
+        }
+    };
+
+    iterate(search_key,start_node);
+
+    return hits;
+
+}
+
+
 void QStdItemModel::connectRefCtrl()
 {
     connect(this,&QObject::destroyed,reference_controller::get_instance(),

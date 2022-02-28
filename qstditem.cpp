@@ -163,7 +163,9 @@ QStdItem &QStdItem::operator=(const QStdItem &other)
 unsigned long long QStdItem::uuid()const
 {
     Q_D(const QStdItem);
-    return d->uuid();
+    if(d)
+    {return d->uuid();}
+    else{return -1;}
 }
 /*!
  Destructs the item.

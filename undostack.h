@@ -56,7 +56,13 @@ class QAction;
 class QUndoCommandPrivate;
 class UndoStackPrivate;
 
-class TEST_LIB_EXPORT QUndoCommand
+// QUndoCommand symbols are already defined in Qt6Gui.dll / Qt6Guid.dll
+// eighter change name from QUndoCommand in UndoCommand everywhere or
+// simply do not export QUndoCommand symbols
+// THIS IS ONLY POSSIBLE AS LONG AS I DO NOT CHANGE ANYTHING IN THE QUndoCommand
+// IMPLEMENTATION !
+
+class /* TEST_LIB_EXPORT*/ QUndoCommand
 {
     QUndoCommandPrivate *d;
 
