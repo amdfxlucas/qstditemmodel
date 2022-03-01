@@ -264,9 +264,9 @@ protected:
     QScopedPointer<QStdItemPrivate> d_ptr;
 
     void emitDataChanged();
-
-private:
     Q_DECLARE_PRIVATE(QStdItem)
+private:
+
     friend class QStdItemModelPrivate;
     friend class QStdItemModel;
 

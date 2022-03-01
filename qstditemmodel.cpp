@@ -1444,7 +1444,6 @@ QMimeData *QStdItemModel::mimeData(const QModelIndexList &indexes) const
 { scope_tagger t{ "QStdItemModel::mimeData"};
 
 
-
     QMimeData *data = QAbstractItemModel::mimeData(indexes);
     if (!data)
     {     

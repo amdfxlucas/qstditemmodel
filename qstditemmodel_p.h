@@ -97,7 +97,7 @@ inline QDebug &operator<<(QDebug &debug, const QStdItemData &data)
 
 
 
-class QStdItemPrivate
+class TEST_LIB_EXPORT QStdItemPrivate
 {
     Q_DECLARE_PUBLIC(QStdItem)
 public:
