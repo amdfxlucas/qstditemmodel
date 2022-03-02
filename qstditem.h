@@ -15,6 +15,7 @@
 #include <QtGui/qbrush.h>
 #include <QtGui/qfont.h>
 #include <QtGui/qicon.h>
+#include <QtCore/QObject>
 #ifndef QT_NO_DATASTREAM
 #include <QtCore/qdatastream.h>
 #endif
@@ -258,6 +259,7 @@ public:
     QStdItem(const QStdItem &other);
     QStdItem(QStdItemPrivate &dd);
     QStdItem &operator=(const QStdItem &other);
+
 protected:
 
     void setModel(QStdItemModel*);
