@@ -278,9 +278,27 @@ bool QStdItemModel::canDropMimeData(const QMimeData *data,
 {
     scope_tagger t {"QStdItemModel::canDropMimeData"};
 
+/* This is the body of QAbstractItemModel::canDropMimeData
+     Q_UNUSED(row);
+    Q_UNUSED(column);
+    Q_UNUSED(parent);
+
+    if (!(action & supportedDropActions()))
+        return false;
+
+    const QStringList modelTypes = mimeTypes();
+    for (int i = 0; i < modelTypes.count(); ++i) {
+        if (data->hasFormat(modelTypes.at(i)))
+            return true;
+    }
+    return false;
+*/
+
 
     auto tmp{ QAbstractItemModel::canDropMimeData(data,action,row,column,parent)};
-    qDebug() << tmp;
+
+
+
     return tmp;
 }
 

@@ -93,7 +93,8 @@ inline int QStdItemPrivate::childIndex(const QStdItem *child) const
    return childsLastIndexInParent;
 }
 
-Qt::ItemFlags QStdItemPrivate::setFlags(Qt::ItemFlags f){ return setData(static_cast<int>(f),Qt::UserRole-1).value<Qt::ItemFlags>();}
+Qt::ItemFlags QStdItemPrivate::setFlags(Qt::ItemFlags f)
+{ return setData(static_cast<int>(f),Qt::UserRole-1).value<Qt::ItemFlags>();}
 QVariant QStdItemPrivate::setData(int m_role,const QVariant& m_value)
 {
     QVariant old_value;
@@ -180,10 +181,14 @@ QStdItem* QStdItemPrivate::setChild(int row, int column, QStdItem *item,
    }
 
    if (rows <= row)
-       q->setRowCount(row + 1);
+    {//   q->setRowCount(row + 1);
+       setRowCount_impl(row+1);
+   }
 
    if (columns <= column)
-       q->setColumnCount(column + 1);
+    {//   q->setColumnCount(column + 1);
+       setColumnCount_impl(column+1);
+   }
 
    int index = childIndex(row, column);
 
@@ -213,8 +218,8 @@ QStdItem* QStdItemPrivate::setChild(int row, int column, QStdItem *item,
 
    // setting the model to nullptr invalidates the persistent index which we want to avoid
    if (!item && oldItem)
-    { //  oldItem->d_func()->setModel(nullptr);
-         oldItem->setModel(nullptr);
+    {   oldItem->d_func()->setModel(nullptr);
+      //   oldItem->setModel(nullptr);
    }
 
    children.replace(index, item);
@@ -222,8 +227,8 @@ QStdItem* QStdItemPrivate::setChild(int row, int column, QStdItem *item,
    // since now indexFromItem() does no longer return a valid index, the persistent index
    // will not be invalidated anymore
    if (oldItem)
-   { //   oldItem->d_func()->setModel(nullptr);
-          oldItem->setModel(nullptr);
+   {    oldItem->d_func()->setModel(nullptr);
+       //   oldItem->setModel(nullptr);
    }
   // delete oldItem;
 
@@ -663,7 +668,9 @@ bool QStdItemPrivate::insertRows(int row, const QList<QStdItem*> &items)
    if (rowCount() == 0)
    {
        if (columnCount() == 0)
-           q->setColumnCount(1);
+       {   // q->setColumnCount(1);
+           setColumnCount_impl(1);
+       }
 
        children.resize(columnCount() * count);
        rows = count;

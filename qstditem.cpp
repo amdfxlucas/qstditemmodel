@@ -122,8 +122,8 @@ QStdItem::QStdItem(int rows, int columns)
    : QStdItem(*new QStdItemPrivate)
 {
      Q_D(QStdItem);
-   setRowCount(rows);
-   setColumnCount(columns);
+   d->setRowCount_impl(rows);
+  d-> setColumnCount_impl(columns);
 }
 
 
@@ -340,25 +340,24 @@ void QStdItem::setEnabled(bool enabled)
 
 void QStdItem::setEditable(bool editable)
 {
-   qDebug()<< "<QStdItem::setEditable(bool editable)>";
+   scope_tagger t{ "QStdItem::setEditable(bool editable)"};
 
    Q_D(QStdItem);
    d->changeFlags(editable, Qt::ItemIsEditable);
 
-   qDebug()<< "</QStdItem::setEditable(bool editable)>";
 }
 
 void QStdItem::setSelectable(bool selectable)
 {
-   qDebug()<< "<QStdItem::setSelectable(bool selectable)>";
+   scope_tagger t{ "QStdItem::setSelectable(bool selectable)"};
        Q_D(QStdItem);
        d->changeFlags(selectable, Qt::ItemIsSelectable);
-   qDebug()<< "</QStdItem::setSelectable(bool selectable)>";
+
 }
 
 void QStdItem::setCheckable(bool checkable)
 {
-   qDebug()<< "<QStdItem::setCheckable(bool checkable)>";
+   scope_tagger t{ "QStdItem::setCheckable(bool checkable)"};
 
    Q_D(QStdItem);
    if (checkable && !isCheckable()) {
@@ -367,7 +366,7 @@ void QStdItem::setCheckable(bool checkable)
            setData(Qt::Unchecked, Qt::CheckStateRole);
    }
    d->changeFlags(checkable, Qt::ItemIsUserCheckable);
-   qDebug()<< "</QStdItem::setCheckable(bool checkable)>";
+
 }
 
 
@@ -410,11 +409,11 @@ void QStdItem::setAutoTristate(bool tristate)
 */
 void QStdItem::setUserTristate(bool tristate)
 {
-    qDebug()<< "<QStdItem::setTristate>";
+   scope_tagger t{ "QStdItem::setTristate"};
 
    Q_D(QStdItem);
    d->changeFlags(tristate, Qt::ItemIsUserTristate);
-   qDebug()<< "<(QStdItem::setTristate>";
+
 }
 
 /*!
@@ -434,21 +433,21 @@ void QStdItem::setUserTristate(bool tristate)
 
 void QStdItem::setDragEnabled(bool dragEnabled)
 {
-   qDebug()<< "<QStdItem::setDragEnabled>";
+   scope_tagger t{ "QStdItem::setDragEnabled"};
    Q_D(QStdItem);
    d->changeFlags(dragEnabled, Qt::ItemIsDragEnabled);
-   qDebug()<< "</QStdItem::setDragEnabled>";
+
 }
 
 
 void QStdItem::setDropEnabled(bool dropEnabled)
 {
-   qDebug()<< "<QStdItem::setDropEnabled(bool dropEnabled)>";
+   scope_tagger t{"QStdItem::setDropEnabled(bool dropEnabled)"};
 
    Q_D(QStdItem);
    d->changeFlags(dropEnabled, Qt::ItemIsDropEnabled);
 
-   qDebug()<< "</QStdItem::setDropEnabled(bool dropEnabled)>";
+
 }
 
 

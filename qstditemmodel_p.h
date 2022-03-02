@@ -172,7 +172,8 @@ public:
         QStdItem *par,
         QStdItemModel *mod)
     {
-       q_func()-> setModel(mod);
+      // q_func()-> setModel(mod);
+        setModel(mod);
         parent = par;
     }
 
