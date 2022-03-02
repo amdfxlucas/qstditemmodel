@@ -475,6 +475,119 @@ scope_tagger t{ "QStdItemPrivate::setItemData(const QMap<int,QVariant>& roles) "
 
 }
 
+QList<QStdItem*> QStdItemPrivate::takeRow(int row)
+{
+    Q_Q(QStdItem);
+    QList<QStdItem*> items;
+    if ((row < 0) || (row >= rowCount()))
+    {
+        return items;
+    }
+
+    if (model)
+        model->d_func()->rowsAboutToBeRemoved(q, row, row);
+
+    int index = childIndex(row, 0);  // Will return -1 if there are no columns
+    if (index != -1)
+    {
+        int col_count = columnCount();
+        items.reserve(col_count);
+        for (int column = 0; column < col_count; ++column)
+        {
+            QStdItem *ch = children.at(index + column);
+            if (ch)
+                ch->d_func()->setParentAndModel(nullptr, nullptr);
+            items.append(ch);
+        }
+        children.remove(index, col_count);
+    }
+    rows--;
+    if (model)
+        model->d_func()->rowsRemoved(q, row, 1);
+
+    return items;
+}
+QList<QStdItem*> QStdItemPrivate::takeColumn(int column)
+{Q_Q(QStdItem);
+    QList<QStdItem*> items;
+    if ((column < 0) || (column >= columnCount()))
+    {
+        return items;
+    }
+    if (model)
+        model->d_func()->columnsAboutToBeRemoved(q, column, column);
+
+    const int row_count = rowCount();
+    items.reserve(row_count);
+    for (int row = row_count - 1; row >= 0; --row)
+    {
+        int index = childIndex(row, column);
+        QStdItem *ch = children.at(index);
+        if (ch)
+            ch->d_func()->setParentAndModel(nullptr, nullptr);
+        children.remove(index);
+        items.prepend(ch);
+    }
+    columns--;
+    if (model)
+        model->d_func()->columnsRemoved(q, column, 1);
+
+
+    return items;
+}
+
+QStdItem* QStdItemPrivate::takeChild(int row,int column)
+{
+
+    QStdItem *item = nullptr;
+    int index = childIndex(row, column);
+    if (index != -1)
+    {
+        QModelIndex changedIdx;
+        item = children.at(index);
+        if (item && model)
+        {
+            QStdItemPrivate *const item_d = item->d_func();
+            const int savedRows = item_d->rows;
+            const int savedCols = item_d->columns;
+            const QVector<QStdItem*> savedChildren = item_d->children;
+
+            if (savedRows > 0)
+            {
+                model->d_func()->rowsAboutToBeRemoved(item, 0, savedRows - 1);
+                item_d->rows = 0;
+                item_d->children = QVector<QStdItem*>(); //slightly faster than clear
+                model->d_func()->rowsRemoved(item, 0, savedRows);
+            }
+
+            if (savedCols > 0)
+            {
+                model->d_func()->columnsAboutToBeRemoved(item, 0, savedCols - 1);
+                item_d->columns = 0;
+                if (!item_d->children.isEmpty())
+                    item_d->children = QVector<QStdItem*>(); //slightly faster than clear
+                model->d_func()->columnsRemoved(item, 0, savedCols);
+            }
+
+            item_d->rows = savedRows;
+            item_d->columns = savedCols;
+            item_d->children = savedChildren;
+            changedIdx = model->indexFromItem(item);
+            item_d->setParentAndModel(nullptr, nullptr);
+        }
+
+        children.replace(index, nullptr);
+        // warum hier nicht remove ?!
+
+        if (changedIdx.isValid())
+            model->dataChanged(changedIdx, changedIdx);
+    }
+
+
+
+
+    return item;
+}
 
 const QMap<int, QVariant> QStdItemPrivate::itemData() const
 {

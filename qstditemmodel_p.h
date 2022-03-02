@@ -98,17 +98,13 @@ inline QDebug &operator<<(QDebug &debug, const QStdItemData &data)
 
 
 class TEST_LIB_EXPORT QStdItemPrivate
-        :public QObject
 {
-    Q_OBJECT
+
 private:
     Q_DECLARE_PUBLIC(QStdItem)
 public:
 
-signals:
-    void _changed();
-public slots:
-    void __changed();
+
 public:
     inline QStdItemPrivate()
         : model(nullptr),
@@ -195,6 +191,9 @@ public:
     bool insertColumns(int column, int count, const QList<QStdItem*> &items);
 
     void sortChildren(int column, Qt::SortOrder order);
+     QStdItem *takeChild(int row, int column = 0);
+     QList<QStdItem*> takeRow(int row);
+     QList<QStdItem*> takeColumn(int column);
 
     bool hasChild(unsigned long long int uuid)const;
     bool hasChildren()const;

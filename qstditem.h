@@ -29,8 +29,15 @@ QT_BEGIN_NAMESPACE
 
 
 
+using time_point_type = std::chrono::time_point<std::chrono::system_clock,std::chrono::minutes >;
+using duration_type = std::chrono::minutes;
 
-
+Q_DECLARE_METATYPE_IMPL(time_point_type)
+Q_DECLARE_METATYPE(duration_type)
+QDataStream &operator<<(QDataStream &out, const time_point_type &myObj);
+QDataStream &operator>>(QDataStream &in, time_point_type &myObj);
+QDataStream &operator<<(QDataStream &out, const duration_type &myObj);
+QDataStream &operator>>(QDataStream &in, duration_type &myObj);
 class QStdItemData
 {
 public:
@@ -259,8 +266,11 @@ public:
     QStdItem(const QStdItem &other);
     QStdItem(QStdItemPrivate &dd);
     QStdItem &operator=(const QStdItem &other);
+        virtual void update();
 
 protected:
+
+
 
     void setModel(QStdItemModel*);
     QScopedPointer<QStdItemPrivate> d_ptr;

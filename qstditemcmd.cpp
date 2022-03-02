@@ -361,6 +361,7 @@ QStdItem::RemoveRowsCmd::~RemoveRowsCmd()
                     // command takes ownership of removed Items
 
 m_reference()->validReference(m_reference());
+               item->update();
    }
 
 
@@ -502,6 +503,7 @@ m_reference()->validReference(m_reference());
      }
 
                     m_reference()->validReference(m_reference());
+                                   item->update();
    }
 
      // VARIANTE II

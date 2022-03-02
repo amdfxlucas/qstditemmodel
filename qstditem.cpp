@@ -61,7 +61,29 @@
 
 #include "qstditemcommands.h"
 
+// time_point_type stream i/o operators rely on ints duration type operators
+QDataStream &operator<<(QDataStream &out, const time_point_type &myObj)
+{
+    out << myObj.time_since_epoch();
+    return out;
+}
+QDataStream &operator>>(QDataStream &in, time_point_type &myObj)
+{   time_point_type::duration dur;
+    in >>dur;
+    return in;
+}
 
+QDataStream &operator<<(QDataStream &out, const duration_type &myObj)
+{
+    out<< myObj.count();
+    return out;
+}
+QDataStream &operator>>(QDataStream &in, duration_type &myObj)
+{   int count{0};
+    in >> count;
+    myObj=duration_type(count);
+    return in;
+}
 
 QMap<int,QVariant> QStdItem::itemData()const
 {
@@ -86,7 +108,7 @@ void QStdItem::setItemData(const QMap<int, QVariant> &roles)
         tmp->redo();
 
     }
-
+update();
 
 }
 
@@ -126,6 +148,10 @@ QStdItem::QStdItem(int rows, int columns)
   d-> setColumnCount_impl(columns);
 }
 
+void QStdItem::update()
+{
+    scope_tagger t{"QStdItem::update"};
+}
 
 QStdItem::QStdItem(QStdItemPrivate &dd)
    : d_ptr(&dd)
@@ -529,7 +555,7 @@ void QStdItem::setRowCount(int rows)
        auto ptr= std::make_shared<SetRowCountCmd>(this,rows);
        ptr->redo();
    }
-
+update();
 }
 
 /*!
@@ -560,7 +586,7 @@ void QStdItem::setColumnCount(int columns)
        auto ptr= std::make_shared<SetColumnCountCmd>(this,columns);
        ptr->redo();
    }
-
+update();
 }
 
 /*!
@@ -594,7 +620,7 @@ else
    auto ptr= std::make_shared<InsertRowCmd>(this,row,items,true);
    ptr->redo();
 }
-
+update();
 }
 
 // VARIANTE I
@@ -609,7 +635,7 @@ else
    auto ptr= std::make_shared<InsertRowCmd>(this,row,items,false);
    ptr->redo();
 }
-
+update();
 }
 
 /*!
@@ -632,7 +658,7 @@ void QStdItem::insertColumn(int column, const QList<QStdItem*> &items)
        ptr->redo();
    }
 
-
+update();
 }
 
 // VARIANTE II
@@ -646,7 +672,7 @@ void QStdItem::insertRows(int row, int count)
        auto ptr= std::make_shared<InsertRowCmd>(this,row,count);
        ptr->redo();
    }
-
+update();
 }
 
 // VARIANTE II
@@ -665,7 +691,7 @@ void QStdItem::insertColumns(int column, int count)
        auto ptr= std::make_shared<InsertColumnCmd>(this,column,count);
        ptr->redo();
    }
-
+update();
 }
 
 bool QStdItem::hasChild(unsigned long long int uuid)const
@@ -679,7 +705,7 @@ void QStdItem::removeRow(int row)
    scope_tagger t{ "QStdItem::removeRow(int row)"};
 
    removeRows(row, 1);
-
+update();
 }
 
 /*!
@@ -692,7 +718,7 @@ void QStdItem::removeColumn(int column)
 {
    scope_tagger t{ "QStdItem::removeColumn(int columns)"};
    removeColumns(column, 1);
-
+update();
 }
 
 /*!
@@ -713,7 +739,7 @@ else
    auto ptr= std::make_shared<RemoveRowsCmd>(this,row,count);
    ptr->redo();
 }
-
+update();
 }
 
 /*!
@@ -733,7 +759,7 @@ void QStdItem::removeColumns(int column, int count)
        auto ptr= std::make_shared<RemoveColumnsCmd>(this,column,count);
        ptr->redo();
    }
-
+update();
 }
 
 
@@ -765,7 +791,7 @@ void QStdItem::setChild(int row, int column, QStdItem *item)
        tmp->redo();
    }
 
-
+update();
 }
 
 
@@ -777,6 +803,7 @@ QStdItem *QStdItem::child(int row, int column) const
        return nullptr;
    return d->children.at(index);
 }
+
 
 /*!
    Removes the child item at (\a row, \a column) without deleting it, and returns
@@ -793,7 +820,7 @@ QStdItem *QStdItem::takeChild(int row, int column)
    scope_tagger t{"QStdItem::takeChild(int row,int column)"};
 
    Q_D(QStdItem);
-   QStdItem *item = nullptr;
+   /*QStdItem *item = nullptr;
    int index = d->childIndex(row, column);
    if (index != -1)
    {
@@ -841,6 +868,10 @@ QStdItem *QStdItem::takeChild(int row, int column)
 
 
    return item;
+   */
+   auto tmp{ d->takeChild(row,column)};
+   update();
+   return tmp;
 }
 
 /*!
@@ -856,7 +887,7 @@ QList<QStdItem*> QStdItem::takeRow(int row)
   scope_tagger t{ "QStdItem::takeRow"};
 
    Q_D(QStdItem);
-   QList<QStdItem*> items;
+   /*QList<QStdItem*> items;
    if ((row < 0) || (row >= rowCount()))
    {
        return items;
@@ -883,7 +914,10 @@ QList<QStdItem*> QStdItem::takeRow(int row)
    if (d->model)
        d->model->d_func()->rowsRemoved(this, row, 1);
 
-   return items;
+   return items;*/
+  auto tmp{d->takeRow(row)};
+  update();
+  return tmp;
 }
 
 /*!
@@ -898,7 +932,7 @@ QList<QStdItem*> QStdItem::takeColumn(int column)
   scope_tagger t{ "QStdItem::takeColumn"};
 
    Q_D(QStdItem);
-   QList<QStdItem*> items;
+/*   QList<QStdItem*> items;
    if ((column < 0) || (column >= columnCount()))
    {
        return items;
@@ -922,7 +956,10 @@ QList<QStdItem*> QStdItem::takeColumn(int column)
        d->model->d_func()->columnsRemoved(this, column, 1);
 
 
-   return items;
+   return items;*/
+  auto tmp{ d->takeColumn(column)};
+  update();
+  return tmp;
 }
 
 /*!
@@ -974,6 +1011,7 @@ void QStdItem::sortChildren(int column, Qt::SortOrder order)
    if (d->model)
        emit d->model->layoutChanged(parents, QAbstractItemModel::VerticalSortHint);
 
+update();
    }
 
 /*!
