@@ -175,75 +175,6 @@ QStdItem::RemoveRowsCmd::~RemoveRowsCmd()
 }
 
 
-/*
-
-   QModelIndex QStdItem::StdItemCmd::this_index() const
-
-   {  m_indexPath = pathFromIndex(_item->index() );
-      return pathToIndex(m_indexPath, this_model() );
-   }
-*/
-
-
-   /* ALTE zu 90% korrekte variante
-   QStdItem* QStdItem::StdItemCmd::this_item()const
-   {
-      auto idx{_item->index()};
-        m_indexPath = pathFromIndex(idx );
-      //return model ? model->itemFromIndex(pathToIndex(m_indexPath,model) ) : _item;
-
-        auto index{pathToIndex(m_indexPath,model)};
-        return model ? ( model->itemFromIndex(index ) ? model->itemFromIndex(index ) : _item ): _item;
-   }*/
-
-/*
-   QStdItem* QStdItem::StdItemCmd::this_item()const
-   {
-   // if this command has a logical path to the item,
-       // it takes preceedence over the stored pointer to the item
-
-       QModelIndex idx;
-
-       if(model )
-       {
-           if(!m_indexPath.isEmpty())
-           {
-               idx=pathToIndex(m_indexPath,model);
-           }
-           else
-           {
-            idx= _item->index();
-           }
-       }else
-       {
-           idx=_item->index();
-       }
-
-      //auto idx{ model&& !m_indexPath.isEmpty() ? pathToIndex(m_indexPath,model): _item->index()};
-
-       if(idx.isValid())
-       {m_indexPath = pathFromIndex(idx );
-       }
-
-
-      //return model ? model->itemFromIndex(pathToIndex(m_indexPath,model) ) : _item;
-
-        auto index{pathToIndex(m_indexPath,model)};
-
-        return model ? ( model->itemFromIndex(index ) ? model->itemFromIndex(index ) : _item ): _item;
-   }
-
-
-      void QStdItem::StdItemCmd::update()
-      {
-
-      }
-
-
-   QStdItemModel* QStdItem::StdItemCmd::this_model() const{return model;}
-
-*/
-
 
    void QStdItem::RemoveRowsCmd::redo()
    {
@@ -255,7 +186,7 @@ QStdItem::RemoveRowsCmd::~RemoveRowsCmd()
 
      UndoStackLock lock{this_model() ? this_model()->undo_stack() : nullptr};
 
-
+/*
    //   if(m_count!=-1)
    //   {
 
@@ -287,7 +218,8 @@ QStdItem::RemoveRowsCmd::~RemoveRowsCmd()
 
    //   }else   {     }
 
-
+*/
+                 m_items=       d->removeRows(m_row,m_count);
    }
 
    void QStdItem::RemoveRowsCmd::undo()
@@ -388,7 +320,7 @@ QStdItem::RemoveRowsCmd::~RemoveRowsCmd()
     // if(m_count!=-1)   {
 
      if(!is_valid_cmd){     return;}
-
+/*
      if (d->model)
          d->model->d_func()->columnsAboutToBeRemoved(item, m_column, m_column + m_count - 1);
 
@@ -424,6 +356,9 @@ QStdItem::RemoveRowsCmd::~RemoveRowsCmd()
          d->model->d_func()->columnsRemoved(item, m_column, m_count);
 
     // }else  {       }
+    */
+     m_items =d->removeColumns(m_column,m_count);
+                    // command takes ownership of removed Items
 
 m_reference()->validReference(m_reference());
    }
@@ -533,11 +468,6 @@ m_reference()->validReference(m_reference());
 
      UndoStackLock lock{this_model() ? this_model()->undo_stack(): nullptr}; // RAII class
 
-                    //    QList<QStdItem*> _pitems;
-
-                      //                 for(auto& i :m_items)
-                      //                 {_pitems.append(&i);}
-
        if(!is_valid_cmd)
       {     return;}
 
@@ -547,7 +477,8 @@ m_reference()->validReference(m_reference());
          // if (m_column < 0)         return;
 
          if (resize_rows)
-          {   item->setRowCount(m_items.count());
+          { d->setRowCount_impl(item_count);
+             //item->setRowCount(m_items.count());
          }
 
           setSuccessFlag(  d->insertColumns(m_column, 1, m_items) );
@@ -626,11 +557,6 @@ m_reference()->validReference(m_reference());
          prev_row_count = i->rowCount();
           prev_col_count=i->columnCount();
 
-         // the commands stores deep copies of the inserted items
-         // not pointer
-       //  for(auto* it : items)
-       //  {   m_items.emplace_back(*it);      }
-
 
          if(! ( (m_column < 0) || (m_column >prev_col_count) ) )
          {
@@ -658,15 +584,18 @@ m_reference()->validReference(m_reference());
       {
           // if (m_column < 0)           return;
 
-          m_items= item->takeColumn(m_column);
+       //   m_items= item->takeColumn(m_column);
           // save the items before any of the subsequent command frees them
 
-          if (resize_rows)
-          {    item->setRowCount(prev_row_count );
-          }
 
-        //  d->removeColumns(m_column, m_items.count() );
-            item->removeColumns(m_column,item_count );
+
+         m_items= d->removeColumns(m_column, item_count );
+         if (resize_rows)
+         {  //  item->setRowCount(prev_row_count );
+             d->setRowCount_impl(prev_row_count);
+         }
+
+        //    item->removeColumns(m_column,item_count );
       }else
           // VARIANTE II Command [no items to save here, since only nullptr were inserted in the first place]
       {
@@ -674,12 +603,14 @@ m_reference()->validReference(m_reference());
          // if(prev_col_count< m_column)
           if(insert_past_end)
           {
-              item->setColumnCount(prev_col_count);
+             // item->setColumnCount(prev_col_count);
+              d->setColumnCount_impl(prev_col_count);
           }
           else
           {
 
-                item->removeColumns(m_column,m_count);
+              //  item->removeColumns(m_column,m_count);
+              d->removeColumns(m_column,m_count);
           }
 
       }
@@ -698,11 +629,6 @@ m_reference()->validReference(m_reference());
 
      UndoStackLock lock{this_model() ? this_model()->undo_stack() : nullptr}; // RAII class
 
-  // QList<QStdItem*> _pitems;
-
-              //   for(auto& i :m_items)
-              //   {_pitems.append(&i);}
-
         // VARIANTE I Command
       if(m_count ==-1)
       {
@@ -715,7 +641,8 @@ m_reference()->validReference(m_reference());
 
 
         //  if (prev_col_count < m_items.count()) // das macht ja jetzt 'resize_columns'
-          item->setColumnCount(item_count);
+        //  item->setColumnCount(item_count);
+              d->setColumnCount_impl(item_count);
 
            // increases column count if neccessary
           setSuccessFlag( d->insertRows(m_row, 1, m_items) );
@@ -759,12 +686,6 @@ m_reference()->validReference(m_reference());
 
          prev_col_count = it->columnCount();
          prev_row_count= it->rowCount();
-
-         // the commands stores deep copies of the inserted items
-         // not pointer
-        // for(auto* it : items)
-        // {   m_items.emplace_back(*it);      }
-
 
          if(prev_col_count< m_items.count())
          {
@@ -815,20 +736,25 @@ m_reference()->validReference(m_reference());
 
           if(resize_columns)
           {
-              m_items = item->takeRow(m_row);
-
-              if (prev_col_count < item_count )
-              {item->setColumnCount(prev_col_count);
-              }
+             // m_items = item->takeRow(m_row);
 
 
-              item->removeRows(m_row,m_items.count()) ;
+
+               m_items= d->removeRows(m_row,item_count);
+             // item->removeRows(m_row,m_items.count()) ;
+
+               if (prev_col_count < item_count )
+               {    d->setColumnCount_impl(prev_col_count);
+                   //item->setColumnCount(prev_col_count);
+               }
           }
           else
           {
-              m_items = item->takeRow(m_row);
+            //  m_items = item->takeRow(m_row);
 
-               item->removeRows(m_row,item_count ) ;
+           //    item->removeRows(m_row,item_count ) ;
+
+              m_items=d->removeRows(m_row,item_count);
           }
      }
      else
@@ -840,11 +766,13 @@ m_reference()->validReference(m_reference());
          //if (prev_row_count < m_row)
          if(insert_past_end)
          {
-          item->setRowCount(prev_row_count);
+          //item->setRowCount(prev_row_count);
+             d->setRowCount_impl(prev_row_count);
          }
          else
          {
-            item->removeRows(m_row,m_count);
+          //  item->removeRows(m_row,m_count);
+             d->removeRows(m_row,m_count);
          }
 
 
@@ -855,10 +783,9 @@ m_reference()->validReference(m_reference());
 
    void QStdItem::SetColumnCountCmd::redo()
    {
-      qDebug()<< "<QStdItem::SetColumnCountCmd::redo> ";
+      scope_tagger t{ "QStdItem::SetColumnCountCmd::redo"};
     impl();
 
-      qDebug()<< "</QStdItem::SetColumnCountCmd::redo> ";
 
    }
 
@@ -871,24 +798,27 @@ m_reference()->validReference(m_reference());
 
      UndoStackLock lock{this_model() ? this_model()->undo_stack() : nullptr}; // RAII class
 
-
+/*
      int cc = item->columnCount();
      // Nothing to do here
      if (cc == m_columns)
          return;
 
      if (cc < m_columns)
-     {    item->insertColumns(qMax(cc, 0), m_columns - cc);
-          //d->insertColumns(qMax(cc, 0), m_columns - cc,QList<QStdItem*>(m_columns - cc,nullptr) );
+     {   // item->insertColumns(qMax(cc, 0), m_columns - cc);
+          d->insertColumns(qMax(cc, 0), m_columns - cc,QList<QStdItem*>(m_columns - cc,nullptr) );
      }
      else
      {
-         item->removeColumns(qMax(m_columns, 0), cc - m_columns);
+        // item->removeColumns(qMax(m_columns, 0), cc - m_columns);
+         d->removeColumns(qMax(m_columns, 0), cc - m_columns);
      }
 
      // backup the previous column count
-     m_columns=cc;
+     m_columns=cc;*/
 
+                        m_columns=d->setColumnCount_impl(m_columns);
+                                        // backup the previous column count
                     m_reference()->validReference(m_reference());
    }
 
@@ -917,7 +847,7 @@ m_reference()->validReference(m_reference());
          QStdItemPrivate* const d= item->d_func();
 
         UndoStackLock lock{this_model() ? this_model()->undo_stack():nullptr }; // RAII class
-
+/*
         // what is the current-row-count
          int rc = item->rowCount();
 
@@ -927,15 +857,17 @@ m_reference()->validReference(m_reference());
 
          if (rc < m_rows)
          {   // this does not increase column count ?! right
-             item->insertRows(qMax(rc, 0), m_rows - rc);
-              //d->insertRows(qMax(rc, 0), m_rows - rc,QList<QStdItem*>(m_rows-rc,nullptr) );
+             //item->insertRows(qMax(rc, 0), m_rows - rc);
+              d->insertRows(qMax(rc, 0), m_rows - rc,QList<QStdItem*>(m_rows-rc,nullptr) );
          }
          else
-         {        item->removeRows(qMax(m_rows, 0), rc - m_rows);
+         {   //     item->removeRows(qMax(m_rows, 0), rc - m_rows);
+             d->removeRows(qMax(m_rows,0),rc - m_rows);
          }
 
 
-         m_rows=rc;
+         m_rows=rc;*/
+                           m_rows= d->setRowCount_impl(m_rows);
                         m_reference()->validReference(m_reference());
      }
 
@@ -1045,12 +977,15 @@ m_reference()->validReference(m_reference());
                         if(resize_columns)
                         {
                             //item->setColumnCount(m_column-1);
-                            item->setColumnCount(prev_col_count);
+                          //  item->setColumnCount(prev_col_count);
+
+                            d->setColumnCount_impl(prev_col_count);
                         }
 
                         if(resize_rows)
                         {
-                            item->setRowCount(prev_row_count);
+                          //  item->setRowCount(prev_row_count);
+                            d->setRowCount_impl(prev_col_count);
                         }
 
 
@@ -1175,50 +1110,11 @@ m_reference()->validReference(m_reference());
           const QList<int> roles((m_role == Qt::DisplayRole) ?
                                       QList<int>({Qt::DisplayRole, Qt::EditRole}) :
                                       QList<int>({m_role}));
-/*
-          for (auto it = d->values.begin(); it != d->values.end(); ++it)
-          {
-              if ((*it).role == m_role)
-              {
-                  if (m_value.isValid())
-                  {
-                      if ((*it).value.userType() == m_value.userType() && (*it).value == m_value)
-                          return;  // nothing to do here , because old value is identical to new value
 
-                      old_value= (*it).value; // save the old value to be able to restore it later
-
-                          (*it).value = m_value;
-
-                      m_value=old_value;
-                  } else {
-                      // Don't need to assign proper it after erase() since we
-                      // return unconditionally in this code path.
-
-                      old_value= (*it).value;
-                      m_value=old_value;
-
-                      d->values.erase(it);
-
-                  }
-
-                  if (d->model)
-                      d->model->d_func()->itemChanged(this_item(), roles);
-                  return;
-              }
-          }
-
-
-          // 'this_item' had no data values set prior to this fcn call
-          d->values.append(QStdItemData(m_role, m_value));
-*/
-          //m_value= old_value; // the old_value before the fcn call was an empty inValid QVariant, as is 'old_value'
           m_value= d->setData(m_role,m_value);
           // 'private Item ' implementation without recording by undo_stack
           // 'setData' returns the old-value
 
-
-     //     if (d->model)
-     //         d->model->d_func()->itemChanged(this_item() , roles);
       }
 
    void QStdItem::SetDataCmd::undo()

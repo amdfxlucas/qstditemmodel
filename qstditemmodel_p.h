@@ -184,6 +184,11 @@ public:
 
     bool insertRows(int row, int count, const QList<QStdItem*> &items);
 
+    QList<QStdItem*> removeRows(int row,int count);
+    QList<QStdItem*> removeColumns(int column,int count);
+    int setRowCount_impl(int m_rows);
+    int setColumnCount_impl(int m_columns);
+
     bool insertRows(int row, const QList<QStdItem*> &items);
 
     bool insertColumns(int column, int count, const QList<QStdItem*> &items);

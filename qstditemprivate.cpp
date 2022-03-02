@@ -167,9 +167,6 @@ QStdItem* QStdItemPrivate::setChild(int row, int column, QStdItem *item,
 
     scope_tagger t{ "QStdItemPrivate::setChild(int row,int column,QStdItem* item,bool emitChanged"};
 
-
-
-
    Q_Q(QStdItem);
    if (item == q)
    {
@@ -254,7 +251,7 @@ return oldItem;
 
 void QStdItemPrivate::changeFlags(bool enable, Qt::ItemFlags f)
 {
-     qDebug()<< "<QStdItemPrivate::changeFlags(bool enable,Qt::ItemFlags)> ";
+     scope_tagger t{ "QStdItemPrivate::changeFlags(bool enable,Qt::ItemFlags)"};
 
    Q_Q(QStdItem);
    Qt::ItemFlags flags = q->flags();
@@ -262,15 +259,88 @@ void QStdItemPrivate::changeFlags(bool enable, Qt::ItemFlags f)
        flags |= f;
    else
        flags &= ~f;
-   q->setFlags(flags);
+ //  q->setFlags(flags);
+   setFlags(flags);
 
-   qDebug()<< "</QStdItemPrivate::changeFlags(bool enable,Qt::ItemFlags)> ";
 }
 
+QList<QStdItem*> QStdItemPrivate::removeColumns(int m_column, int m_count)
+{
+    scope_tagger t{"QStdItemPrivate::removeColumns"};
+    Q_Q(QStdItem);
+
+QList<QStdItem*> m_items;
+
+     if (model)
+         model->d_func()->columnsAboutToBeRemoved(q, m_column, m_column + m_count - 1);
+
+
+     // traverse all 'rowCount()' rows from bottom to top,
+     // so that we can safely execute the 'REMOVE' statement
+     // without invalidating the successive calls to 'GET_INDEX'
+     for (int row = rowCount() - 1; row >= 0; --row)
+     {
+         int i = childIndex(row, m_column); // GET_INDEX
+
+         // incrementing the linear row-major index 'j'
+         // means traversing the current row 'row' to the right
+         // for (int j=i; j<i+m_count; ++j)
+         for( int j{i+m_count-1}; j>=i ; --j )  // right to left traversal of the row 'row'
+         {
+             QStdItem *oldItem = children.at(j);
+
+             if (oldItem){oldItem->d_func()->setModel(nullptr);}
+             // if (oldItem){oldItem->setModel(nullptr);}
+
+             //delete oldItem;
+           //  m_items.append(oldItem);
+             m_items.prepend(oldItem);
+
+
+         }
+         children.remove(i, m_count); // REMOVE
+     }
+     columns -= m_count;
+
+     if (model)
+         model->d_func()->columnsRemoved(q, m_column, m_count);
+return m_items;
+
+}
+QList<QStdItem*>  QStdItemPrivate::removeRows(int m_row,int m_count)
+{
+   Q_Q(QStdItem);
+    QList<QStdItem*> m_items;
+scope_tagger t {"QStdItemPrivate::removeRows"};
+          if ((m_count < 1) || (m_row < 0) || ((m_row + m_count) > q->rowCount()))
+              return QList<QStdItem*>();
+
+          if (model)
+              model->d_func()->rowsAboutToBeRemoved(q, m_row, m_row + m_count - 1);
+
+          int i = childIndex(m_row, 0);
+          int n = m_count * columnCount();
+
+          for (int j = i; j < n+i; ++j)
+          {
+              QStdItem *oldItem = children.at(j);
+
+
+              m_items.append(oldItem);
+          }
+
+          children.remove(qMax(i, 0), n);
+          rows -= m_count;
+
+          if (model)
+              model->d_func()->rowsRemoved(q, m_row, m_count);
+ return m_items;
+
+}
 
 void QStdItemPrivate::childDeleted(QStdItem *child)
 {
-   qDebug()<< "<QStdItemPrivate::childDeleted(QStdItem* child)> ";
+   scope_tagger t{ "QStdItemPrivate::childDeleted(QStdItem* child)"};
 
    int index = childIndex(child);
    Q_ASSERT(index != -1);
@@ -278,7 +348,7 @@ void QStdItemPrivate::childDeleted(QStdItem *child)
    children.replace(index, nullptr);
    emit model->dataChanged(modelIndex, modelIndex);
 
-   qDebug()<< "</QStdItemPrivate::childDeleted(QStdItem* child)> ";
+
 }
 
 namespace {
@@ -349,10 +419,7 @@ namespace {
 
 void QStdItemPrivate::setItemData(const QMap<int, QVariant> &roles)
 {
- auto print_start =[](){  qDebug()<< "<QStdItemPrivate::setItemData(const QMap<int,QVariant>& roles)> ";};
- auto print_end= [](){ qDebug()<< "</QStdItemPrivate::setItemData(const QMap<int,QVariant>& roles)> ";};
-
- print_start();
+scope_tagger t{ "QStdItemPrivate::setItemData(const QMap<int,QVariant>& roles) "};
 
    Q_Q(QStdItem);
 
@@ -400,7 +467,7 @@ void QStdItemPrivate::setItemData(const QMap<int, QVariant> &roles)
            model->d_func()->itemChanged(q, roleKeys);
        }
    }
-  print_end();
+
 }
 
 
@@ -464,14 +531,12 @@ bool QStdItemPrivate::hasChild(unsigned long long int uuid)const
 
 void QStdItemPrivate::sortChildren(int column, Qt::SortOrder order)
 {
-   auto print_start = [](){qDebug()<< "<QStdItemPrivate::sortChildren(int column,Qt::SortOrder )> ";};
-   auto print_end = [](){qDebug()<< "</QStdItemPrivate::sortChildren(int column,Qt::SortOrder )> ";};
+   scope_tagger t{ "QStdItemPrivate::sortChildren(int column,Qt::SortOrder )"};
 
-   print_start();
 
    Q_Q(QStdItem);
    if (column >= columnCount())
-   {print_end();return;}
+   {return;}
 
    QList<QPair<QStdItem*, int> > sortable;
    QList<int> unsortable;
@@ -535,7 +600,6 @@ void QStdItemPrivate::sortChildren(int column, Qt::SortOrder order)
        if (*it)
            (*it)->d_func()->sortChildren(column, order);
    }
-   print_end();
 }
 
 /*!
@@ -634,6 +698,52 @@ bool QStdItemPrivate::insertRows(int row, const QList<QStdItem*> &items)
 
 
    return true;
+}
+
+int QStdItemPrivate::setColumnCount_impl(int m_columns)
+{Q_Q(QStdItem);
+
+    int cc = q->columnCount();
+    // Nothing to do here
+    if (cc == m_columns)
+        return m_columns;
+
+    if (cc < m_columns)
+    {   // item->insertColumns(qMax(cc, 0), m_columns - cc);
+         insertColumns(qMax(cc, 0), m_columns - cc,QList<QStdItem*>(m_columns - cc,nullptr) );
+    }
+    else
+    {
+       // item->removeColumns(qMax(m_columns, 0), cc - m_columns);
+        removeColumns(qMax(m_columns, 0), cc - m_columns);
+    }
+
+    // return the previous column count
+   return cc;
+}
+
+int QStdItemPrivate::setRowCount_impl(int m_rows)
+{
+    Q_Q(QStdItem);
+    // what is the current-row-count
+     int rc = q->rowCount();
+
+     // Nothing to do here
+     if (rc == m_rows)
+         return m_rows;
+
+     if (rc < m_rows)
+     {   // this does not increase column count ?! right
+         //item->insertRows(qMax(rc, 0), m_rows - rc);
+          insertRows(qMax(rc, 0), m_rows - rc,QList<QStdItem*>(m_rows-rc,nullptr) );
+     }
+     else
+     {   //     item->removeRows(qMax(m_rows, 0), rc - m_rows);
+         removeRows(qMax(m_rows,0),rc - m_rows);
+     }
+
+
+    return rc; // return the old rowCount
 }
 
 /*if columnCount()x count is less then items.count() the remaining items from
