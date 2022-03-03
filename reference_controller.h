@@ -116,7 +116,8 @@ public slots:
   //  void ReceiveIndexForItem(QModelIndex,QStdItem*);
 
 public:
-
+int cmd_count()const;
+void clear();
 
     reference* new_reference(QStdItem* i, QModelIndex idx, QStdItem::StdItemCmd* cmd);
      reference* new_reference(QStdItem* i,  QStdItem::StdItemCmd* cmd);

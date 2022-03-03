@@ -187,7 +187,9 @@ QStdItemModel::QStdItemModel(QStdItemModelPrivate &dd, QObject *parent)
 */
 QStdItemModel::~QStdItemModel()
 {
-
+    // hässlicher workaround, der nur ausnahmsweise funktioniert,
+    // da es lediglich ein einziges modell in der anwendung gibt
+    reference_controller::get_instance()->clear();
 
     Q_D(QStdItemModel);
     delete d->itemPrototype;
@@ -322,7 +324,10 @@ void QStdItemModel::clear()
 
 
     m_stack->clear(); // forget the command history
-
+auto refctrl{reference_controller::get_instance()};
+auto cnd_before{refctrl->cmd_count()};
+refctrl->clear();
+qDebug()<<refctrl->cmd_count();
     Q_D(QStdItemModel);
 
     auto text{QString("clear")};
@@ -1843,7 +1848,8 @@ void QStdItemModel::loadFromFile(const QString &filename)
     {
         int r, c;
         QStdItem *item = d->createItem();
-        item->setModel(this); // lucas 14.02.22
+      //  item->setModel(this); // lucas 14.02.22
+          item->d_func()->setModel(this); // lucas 14.02.22
         stream >> r >> c;
         d->decodeDataRecursive(stream, item);
 
@@ -1859,7 +1865,8 @@ void QStdItemModel::loadFromFile(const QString &filename)
  beginResetModel();
 
     d->root.reset(items.takeLast());
-    invisibleRootItem()->setFlags(Qt::ItemIsDropEnabled             );
+    //invisibleRootItem()->setFlags(Qt::ItemIsDropEnabled             );
+    invisibleRootItem()->d_func()->setFlags(Qt::ItemIsDropEnabled             );
 
 
 

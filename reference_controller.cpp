@@ -8,6 +8,16 @@ bool reference::operator==(const reference& ref)const
   return m_cmd==ref.m_cmd;
 }
 
+int reference_controller::cmd_count()const
+{
+    return m_ref.size();
+}
+
+void reference_controller::clear()
+{
+    m_ref.clear();
+}
+
 bool reference:: referToSameItem(const reference& ref)const
 {
     // two references compare equal, if they reference the same item in the model

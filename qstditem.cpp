@@ -70,6 +70,7 @@ QDataStream &operator<<(QDataStream &out, const time_point_type &myObj)
 QDataStream &operator>>(QDataStream &in, time_point_type &myObj)
 {   time_point_type::duration dur;
     in >>dur;
+    myObj=time_point_type(dur);
     return in;
 }
 
