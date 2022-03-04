@@ -12,7 +12,8 @@ class QStdItem;
 
 class reference_controller;
 
-class reference : public QObject
+class reference
+ : public QObject
 {Q_OBJECT
 
 public  slots:
@@ -105,9 +106,12 @@ inline uint qHash(const reference& r)
 
 
 
-class reference_controller : public QObject
+class reference_controller
+      : public QObject
 {Q_OBJECT
 public slots:
+
+    void free_uuid(unsigned long long uuid);
 
     void validReference(reference*);
 

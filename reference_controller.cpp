@@ -1,5 +1,6 @@
 #include "reference_controller.h"
 #include "qstditemmodel.h"
+#include "qstditemmodel_p.h"
 
 
 bool reference::operator==(const reference& ref)const
@@ -40,6 +41,7 @@ void reference_controller::lock(bool lck)
 
 void reference_controller::modelDestroyed(QObject* m)
 {
+    /*
     auto deleted_model{dynamic_cast<QStdItemModel*>(m)};
 
     auto i=m_ref.begin();
@@ -54,6 +56,7 @@ void reference_controller::modelDestroyed(QObject* m)
         }
         ++i;
     }
+    */
 
 }
 
@@ -88,8 +91,17 @@ reference::reference(QStdItem* i,
     connect(this,&reference::validReference,
             m_controller, &reference_controller::validReference);
 
+    connect(i->d_func(),&QStdItemPrivate::free_uuid,
+            ctrl,&reference_controller::free_uuid);
+
 }
 
+void reference_controller::free_uuid(unsigned long long uuid)
+{
+    // QStdItemPrivate emits 'free_uuid(unsigned long long uuid)' signal in its Destructor
+    // what causes reference_controller to delete all references, which refer to this uuid
+    m_ref.remove(uuid);
+}
 
 reference_controller::reference_controller()
     : QObject()

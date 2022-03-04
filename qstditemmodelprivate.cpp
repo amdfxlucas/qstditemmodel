@@ -60,6 +60,7 @@
 #include <algorithm>
 
 
+
 QStdItemModelPrivate::QStdItemModelPrivate(QStdItemModel* m)
    : root(new QStdItem(m)), itemPrototype(nullptr)
 {
