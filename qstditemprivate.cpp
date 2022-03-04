@@ -18,6 +18,11 @@
 #include <qdebug.h>
 #include <algorithm>
 
+QStdItemPrivate::~QStdItemPrivate()
+{
+    // request reference_controller, to free all references that refer to this Item
+    emit free_uuid(uuid());
+}
 
 class QStdItemModelLessThan
 {

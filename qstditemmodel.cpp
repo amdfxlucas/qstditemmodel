@@ -139,8 +139,9 @@ QStdItemModel::QStdItemModel(QObject *parent)
 
 void QStdItemModel::connectRefCtrl()
 {
-    connect(this,&QObject::destroyed,reference_controller::get_instance(),
+ /*   connect(this,&QObject::destroyed,reference_controller::get_instance(),
                    &reference_controller::modelDestroyed);
+                   */
 }
 
 /*!
@@ -189,7 +190,7 @@ QStdItemModel::~QStdItemModel()
 {
     // hässlicher workaround, der nur ausnahmsweise funktioniert,
     // da es lediglich ein einziges modell in der anwendung gibt
-    reference_controller::get_instance()->clear();
+  //  reference_controller::get_instance()->clear();
 
     Q_D(QStdItemModel);
     delete d->itemPrototype;

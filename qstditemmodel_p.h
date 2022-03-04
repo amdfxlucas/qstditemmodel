@@ -98,14 +98,20 @@ inline QDebug &operator<<(QDebug &debug, const QStdItemData &data)
 
 
 class TEST_LIB_EXPORT QStdItemPrivate
+        : public QObject
 {
-
+Q_OBJECT
 private:
     Q_DECLARE_PUBLIC(QStdItem)
 public:
 
+~QStdItemPrivate();
+ signals:
+    void free_uuid(unsigned long long uuid);
 
 public:
+
+
     inline QStdItemPrivate()
         : model(nullptr),
           parent(nullptr),
