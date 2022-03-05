@@ -241,7 +241,7 @@ QStdItem* QStdItemPrivate::setChild(int row, int column, QStdItem *item,
        item->d_func()->lastKnownIndex = index;
 
    if (model && emitChanged)
-       emit model->layoutChanged();
+       emit model->layoutChanged(); // warum wird hier nicht der parent index als argument mit angegeben ?!
 
    if (emitChanged && model)
    {
