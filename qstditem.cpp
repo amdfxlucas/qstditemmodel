@@ -127,7 +127,8 @@ QStdItem::QStdItem()
 QStdItem::QStdItem(const QString &text)
    : QStdItem(*new QStdItemPrivate)
 {
-   setText(text);
+  // setText(text);
+    d_func()->setData( Qt::DisplayRole,text);
 }
 
 
