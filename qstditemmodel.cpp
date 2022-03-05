@@ -333,9 +333,11 @@ void QStdItemModel::clear()
     beginResetModel();
     d->root.reset(new QStdItem);
 
-    d->root->setFlags(Qt::ItemIsDropEnabled);
+
+   // d->root->setFlags(Qt::ItemIsDropEnabled);
   //  d->root->d_func()->setModel(this);
       d->root->setModel(this);
+         d->root->d_func()->setFlags(Qt::ItemIsDropEnabled);
 
     qDeleteAll(d->columnHeaderItems);
     d->columnHeaderItems.clear();
