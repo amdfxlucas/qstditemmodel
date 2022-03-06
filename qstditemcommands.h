@@ -52,6 +52,9 @@ public:
 
     virtual ~StdItemCmd();
 
+    virtual void redo() override;
+    virtual void undo() override;
+
     constexpr UndoStack* get_stack()const;
    constexpr QStdItemModel* this_model()const;
    constexpr QStdItem* this_item()const;

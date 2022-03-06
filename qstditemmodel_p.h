@@ -102,7 +102,9 @@ class TEST_LIB_EXPORT QStdItemPrivate
 {
 Q_OBJECT
 private:
-    Q_DECLARE_PUBLIC(QStdItem)
+  //  Q_DECLARE_PUBLIC(QStdItem)
+protected:
+      Q_DECLARE_PUBLIC(QStdItem)
 public:
 
 ~QStdItemPrivate();
@@ -139,7 +141,7 @@ public:
     Qt::ItemFlags setFlags(Qt::ItemFlags f);
 
     // sets the Data under the given role and returns the old value
-    QVariant setData(int m_role,const QVariant& m_value);
+  virtual  QVariant setData(int m_role,const QVariant& m_value);
 
     unsigned long long uuid()const {return m_uuid;}
 

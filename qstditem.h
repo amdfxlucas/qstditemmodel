@@ -265,6 +265,7 @@ public:
 
     QStdItem(const QStdItem &other);
     QStdItem(QStdItemPrivate &dd);
+     QStdItem(QStdItemPrivate *dd);
     QStdItem &operator=(const QStdItem &other);
         virtual void update();
 

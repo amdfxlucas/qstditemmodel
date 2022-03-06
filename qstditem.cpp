@@ -136,7 +136,8 @@ QStdItem::QStdItem(const QString &text)
 QStdItem::QStdItem(const QIcon &icon, const QString &text)
    : QStdItem(text)
 {
-   setIcon(icon);
+   //setIcon(icon);
+    d_func()->setData( Qt::DecorationRole,icon);
 }
 
 /*!
@@ -157,6 +158,13 @@ void QStdItem::update()
 
 QStdItem::QStdItem(QStdItemPrivate &dd)
    : d_ptr(&dd)
+{
+   Q_D(QStdItem);
+   d->q_ptr = this;
+}
+
+QStdItem::QStdItem(QStdItemPrivate *dd)
+   : d_ptr(dd)
 {
    Q_D(QStdItem);
    d->q_ptr = this;

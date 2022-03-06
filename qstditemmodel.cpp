@@ -1608,10 +1608,12 @@ bool QStdItemModel::dropMimeData(const QMimeData *data, Qt::DropAction action,
     while (!stream.atEnd())
     {
         int r, c;
-       // QStdItem *item = d->createItem();
+        QStdItem *item = d->createItem();
       //  item->setModel(this); // lucas 14.02.22
+        item->d_func()->setModel(this);
 
-        auto item = new QStdItem(this);
+      //  auto item = new QStdItem(this);
+        // damit funktioniert das auto-update nach beenden eines DragDrop Vorgangs nicht mehr
 
         stream >> r >> c;
         d->decodeDataRecursive(stream, item);
