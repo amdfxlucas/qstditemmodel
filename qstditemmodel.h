@@ -267,7 +267,7 @@ void  QStdItemModel::iterate(const auto& func,const QModelIndex & index) const
         return;
     }
 
-    auto item{this->itemFromIndex(index)};
+    auto item{index.isValid() ? this->itemFromIndex(index) : invisibleRootItem() };
     if(item)
     {
     // auto rows = this->rowCount(index);
