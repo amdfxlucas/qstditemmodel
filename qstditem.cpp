@@ -109,7 +109,7 @@ void QStdItem::setItemData(const QMap<int, QVariant> &roles)
         tmp->redo();
 
     }
-update();
+//update();
 
 }
 
@@ -565,7 +565,7 @@ void QStdItem::setRowCount(int rows)
        auto ptr= std::make_shared<SetRowCountCmd>(this,rows);
        ptr->redo();
    }
-update();
+//update();
 }
 
 /*!
@@ -596,7 +596,7 @@ void QStdItem::setColumnCount(int columns)
        auto ptr= std::make_shared<SetColumnCountCmd>(this,columns);
        ptr->redo();
    }
-update();
+//update();
 }
 
 /*!
@@ -630,7 +630,7 @@ else
    auto ptr= std::make_shared<InsertRowCmd>(this,row,items,true);
    ptr->redo();
 }
-update();
+//update();
 }
 
 // VARIANTE I
@@ -645,7 +645,7 @@ else
    auto ptr= std::make_shared<InsertRowCmd>(this,row,items,false);
    ptr->redo();
 }
-update();
+//update();
 }
 
 /*!
@@ -668,7 +668,7 @@ void QStdItem::insertColumn(int column, const QList<QStdItem*> &items)
        ptr->redo();
    }
 
-update();
+//update();
 }
 
 // VARIANTE II
@@ -682,7 +682,7 @@ void QStdItem::insertRows(int row, int count)
        auto ptr= std::make_shared<InsertRowCmd>(this,row,count);
        ptr->redo();
    }
-update();
+//update();
 }
 
 // VARIANTE II
@@ -701,7 +701,7 @@ void QStdItem::insertColumns(int column, int count)
        auto ptr= std::make_shared<InsertColumnCmd>(this,column,count);
        ptr->redo();
    }
-update();
+//update();
 }
 
 bool QStdItem::hasChild(unsigned long long int uuid)const
@@ -715,7 +715,7 @@ void QStdItem::removeRow(int row)
    scope_tagger t{ "QStdItem::removeRow(int row)"};
 
    removeRows(row, 1);
-update();
+//update();
 }
 
 /*!
@@ -728,7 +728,7 @@ void QStdItem::removeColumn(int column)
 {
    scope_tagger t{ "QStdItem::removeColumn(int columns)"};
    removeColumns(column, 1);
-update();
+//update();
 }
 
 /*!
@@ -749,7 +749,7 @@ else
    auto ptr= std::make_shared<RemoveRowsCmd>(this,row,count);
    ptr->redo();
 }
-update();
+//update();
 }
 
 /*!
@@ -769,7 +769,7 @@ void QStdItem::removeColumns(int column, int count)
        auto ptr= std::make_shared<RemoveColumnsCmd>(this,column,count);
        ptr->redo();
    }
-update();
+//update();
 }
 
 
@@ -801,7 +801,7 @@ void QStdItem::setChild(int row, int column, QStdItem *item)
        tmp->redo();
    }
 
-update();
+//update();
 }
 
 
@@ -830,55 +830,7 @@ QStdItem *QStdItem::takeChild(int row, int column)
    scope_tagger t{"QStdItem::takeChild(int row,int column)"};
 
    Q_D(QStdItem);
-   /*QStdItem *item = nullptr;
-   int index = d->childIndex(row, column);
-   if (index != -1)
-   {
-       QModelIndex changedIdx;
-       item = d->children.at(index);
-       if (item && d->model)
-       {
-           QStdItemPrivate *const item_d = item->d_func();
-           const int savedRows = item_d->rows;
-           const int savedCols = item_d->columns;
-           const QVector<QStdItem*> savedChildren = item_d->children;
 
-           if (savedRows > 0)
-           {
-               d->model->d_func()->rowsAboutToBeRemoved(item, 0, savedRows - 1);
-               item_d->rows = 0;
-               item_d->children = QVector<QStdItem*>(); //slightly faster than clear
-               d->model->d_func()->rowsRemoved(item, 0, savedRows);
-           }
-
-           if (savedCols > 0)
-           {
-               d->model->d_func()->columnsAboutToBeRemoved(item, 0, savedCols - 1);
-               item_d->columns = 0;
-               if (!item_d->children.isEmpty())
-                   item_d->children = QVector<QStdItem*>(); //slightly faster than clear
-               d->model->d_func()->columnsRemoved(item, 0, savedCols);
-           }
-
-           item_d->rows = savedRows;
-           item_d->columns = savedCols;
-           item_d->children = savedChildren;
-           changedIdx = d->model->indexFromItem(item);
-           item_d->setParentAndModel(nullptr, nullptr);
-       }
-
-       d->children.replace(index, nullptr);
-       // warum hier nicht remove ?!
-
-       if (changedIdx.isValid())
-           d->model->dataChanged(changedIdx, changedIdx);
-   }
-
-
-
-
-   return item;
-   */
    auto tmp{ d->takeChild(row,column)};
    update();
    return tmp;
@@ -897,34 +849,7 @@ QList<QStdItem*> QStdItem::takeRow(int row)
   scope_tagger t{ "QStdItem::takeRow"};
 
    Q_D(QStdItem);
-   /*QList<QStdItem*> items;
-   if ((row < 0) || (row >= rowCount()))
-   {
-       return items;
-   }
 
-   if (d->model)
-       d->model->d_func()->rowsAboutToBeRemoved(this, row, row);
-
-   int index = d->childIndex(row, 0);  // Will return -1 if there are no columns
-   if (index != -1)
-   {
-       int col_count = d->columnCount();
-       items.reserve(col_count);
-       for (int column = 0; column < col_count; ++column)
-       {
-           QStdItem *ch = d->children.at(index + column);
-           if (ch)
-               ch->d_func()->setParentAndModel(nullptr, nullptr);
-           items.append(ch);
-       }
-       d->children.remove(index, col_count);
-   }
-   d->rows--;
-   if (d->model)
-       d->model->d_func()->rowsRemoved(this, row, 1);
-
-   return items;*/
   auto tmp{d->takeRow(row)};
   update();
   return tmp;
@@ -942,31 +867,7 @@ QList<QStdItem*> QStdItem::takeColumn(int column)
   scope_tagger t{ "QStdItem::takeColumn"};
 
    Q_D(QStdItem);
-/*   QList<QStdItem*> items;
-   if ((column < 0) || (column >= columnCount()))
-   {
-       return items;
-   }
-   if (d->model)
-       d->model->d_func()->columnsAboutToBeRemoved(this, column, column);
 
-   const int rowCount = d->rowCount();
-   items.reserve(rowCount);
-   for (int row = rowCount - 1; row >= 0; --row)
-   {
-       int index = d->childIndex(row, column);
-       QStdItem *ch = d->children.at(index);
-       if (ch)
-           ch->d_func()->setParentAndModel(nullptr, nullptr);
-       d->children.remove(index);
-       items.prepend(ch);
-   }
-   d->columns--;
-   if (d->model)
-       d->model->d_func()->columnsRemoved(this, column, 1);
-
-
-   return items;*/
   auto tmp{ d->takeColumn(column)};
   update();
   return tmp;

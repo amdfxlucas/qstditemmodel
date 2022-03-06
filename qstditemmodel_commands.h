@@ -29,6 +29,7 @@ private:
     Path m_ret_path; // return value of QStdItemModel::cut(..)
     Path m_path;    // path to model index where the item was removed
     bool is_index_valid{true};
+    QPersistentModelIndex persistent_parent;
 public:
     virtual ~CutItemCmd();
 

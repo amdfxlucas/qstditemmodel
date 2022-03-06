@@ -86,7 +86,8 @@ QVariant QStdItemModel::QStdItemModelCmd::returnValue()const
    QStdItemModel::CutItemCmd::CutItemCmd(QStdItemModel* m,
               const QModelIndex& idx,
               QUndoCommand* p)
-       : QStdItemModelCmd(m,p)
+       : QStdItemModelCmd(m,p),
+         persistent_parent(idx.parent())
    {
        m_path= m->pathFromIndex(idx);
        is_index_valid = (idx.isValid() )? true:false;
@@ -103,9 +104,10 @@ void QStdItemModel::CutItemCmd::undo()
                        qDebug().noquote()<< "</QStdItemModel::CutItemCmd::undo>";}
                    };
 
-    auto p_path{model()->parentPath(m_path)};
+    auto p_path{model()->parentPath(m_path)}; // path to persistent_parent index
 
       auto parent_index{model()->pathToIndex(p_path ) };
+      Q_ASSERT(persistent_parent==parent_index);
 
       if(!is_index_valid)
       {
@@ -120,12 +122,16 @@ void QStdItemModel::CutItemCmd::undo()
       // QStdItem::setChild delegates to SetChildCmd::redo which delegates to QStdItemPrivate::setChild
       // which resizes rows & columns to fit its new child if neccessary
         auto parent{model()->itemFromIndex(parent_index)};
-        if(parent==nullptr) {parent= model()->invisibleRootItem();}
+        if(parent==nullptr)
+        {parent= model()->invisibleRootItem();
+        }
 
         if(is_parent_single_column)
         {
             auto cut_item{model()->d_func()->cut_item};
             parent->insertRow(row,cut_item);
+
+          //  parent->update(); unneccessary because done by undoCmd
         }
         else
         {
@@ -178,7 +184,8 @@ void  QStdItemModel::CutItemCmd::redo()
     Q_ASSERT(model()->d_func()->cut_item);
 
     QStdItem *parent =model()->d_func()->cut_item->parent();
-    if(!parent){parent=model()->invisibleRootItem();}
+    if(!parent)
+    {parent=model()->invisibleRootItem();}
 
     Q_ASSERT(parent);
 
@@ -203,6 +210,8 @@ void  QStdItemModel::CutItemCmd::redo()
          Q_ASSERT(!items.isEmpty());
 
           child = items.takeFirst();
+
+        //  parent->update(); unneccessary, because done by the implementation
     }else
     {
          child = parent->takeChild(row);
@@ -287,7 +296,8 @@ void QStdItemModel::PasteItemCmd::undo()
    Q_ASSERT(sibling);
 
    QStdItem *parent = sibling->parent();
-   if(parent==nullptr){parent=model()->invisibleRootItem();}
+   if(parent==nullptr)
+   {parent=model()->invisibleRootItem();}
 
 
     int row = sibling->row() + 1;
@@ -346,7 +356,8 @@ void QStdItemModel::PasteItemCmd::redo()
 
         QStdItem *parent = sibling->parent();
 
-        if(parent==nullptr){parent=model()->invisibleRootItem();}
+        if(parent==nullptr)
+        {parent=model()->invisibleRootItem();}
 
             auto cols{parent->columnCount()};
             is_single_column= cols==1;
