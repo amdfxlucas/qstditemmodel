@@ -47,6 +47,7 @@
 
 #include <QtGui/qtguiglobal.h>
 #include <QtCore/qabstractitemmodel.h>
+//#include "qabstractitemmodel.h"
 #include <QtGui/qbrush.h>
 #include <QtGui/qfont.h>
 #include <QtGui/qicon.h>

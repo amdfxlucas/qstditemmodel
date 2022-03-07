@@ -54,6 +54,7 @@
  #include "qstditemmodel.h"
 #include "QtGui/private/qtguiglobal_p.h"
 #include "QtCore/private/qabstractitemmodel_p.h"
+//#include "qabstractitemmodel_p.h"
 
 #include <QtCore/qlist.h>
 #include <QtCore/qpair.h>
