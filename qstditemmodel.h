@@ -116,7 +116,8 @@ public:
     bool contains(unsigned long long int uuid)const;
     bool contains(QStdItem* item)const;
 
-
+virtual bool canAcceptCut(const QModelIndex&)const;
+virtual bool canAcceptPaste(const QModelIndex&)const;
     QModelIndex cut(const QModelIndex &index);
     bool hasCutItem() const ;
     QModelIndex paste(const QModelIndex &index,Behaviour b = AsSibling);

@@ -90,7 +90,8 @@ QVariant QStdItemModel::QStdItemModelCmd::returnValue()const
          persistent_parent(idx.parent())
    {
        m_path= m->pathFromIndex(idx);
-       is_index_valid = (idx.isValid() )? true:false;
+       //is_index_valid = (idx.isValid() )? true:false;
+       is_index_valid = m->canAcceptCut(idx);
 
    }
 
@@ -204,17 +205,17 @@ void  QStdItemModel::CutItemCmd::redo()
 
 
     if(is_parent_single_column)
-      {
-         auto items = parent->takeRow(row);
+    {
+        auto items = parent->takeRow(row);
 
-         Q_ASSERT(!items.isEmpty());
+        Q_ASSERT(!items.isEmpty());
 
-          child = items.takeFirst();
+        child = items.takeFirst();
 
         //  parent->update(); unneccessary, because done by the implementation
     }else
     {
-         child = parent->takeChild(row);
+        child = parent->takeChild(row);
     }
 
     model()->endRemoveRows();
@@ -253,6 +254,7 @@ QStdItemModel::PasteItemCmd::PasteItemCmd(QStdItemModel* m,
     : QStdItemModelCmd(m,p),
       strategy(b)
 {
+    is_index_valid=m->canAcceptPaste(idx);
 
     m_path= m->pathFromIndex(idx);
 
@@ -266,7 +268,7 @@ QStdItemModel::PasteItemCmd::PasteItemCmd(QStdItemModel* m,
     : QStdItemModelCmd(m,p),
       strategy(b),m_path(pth)
 {
-
+is_index_valid=m->canAcceptPaste(m->pathToIndex(m_path) );
 }
 
 void QStdItemModel::PasteItemCmd::undo()
@@ -279,6 +281,8 @@ void QStdItemModel::PasteItemCmd::undo()
                        qDebug().noquote()<< "</QStdItemModel::PasteItemCmd::undo>";}
                    };
 
+    if(!is_index_valid)return;
+
     auto index{model()->pathToIndex(m_path)};
 
     auto cutItem{model()->d_func()->cut_item};
@@ -286,7 +290,7 @@ void QStdItemModel::PasteItemCmd::undo()
 
    if (!index.isValid() )
    {
-       m_ret_path=m_path;
+       m_ret_path=m_path; // fehlt hier nicht return ?!
    }
 
    QStdItem* child{nullptr};
@@ -334,8 +338,9 @@ void QStdItemModel::PasteItemCmd::redo()
                        qDebug().noquote()<< "</QStdItemModel::PasteItemCmd::redo>";}
                    };
 
+if(!is_index_valid)return;
 
-     auto index{model()->pathToIndex(m_path)};
+auto index{model()->pathToIndex(m_path)};
 
      auto cutItem{model()->d_func()->cut_item};
 

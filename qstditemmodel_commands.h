@@ -49,7 +49,7 @@ public:
 class QStdItemModel::PasteItemCmd
         :public QStdItemModelCmd
 {private:
-
+bool is_index_valid{true};
     bool is_single_column{false};
     Path m_ret_path; // return value of QStdItemModel::paste(..)
     Path m_path;

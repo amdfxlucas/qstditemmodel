@@ -213,6 +213,7 @@ Path QStdItemModel::parentPath(const Path& p )
 
 QModelIndex QStdItemModel::cut(const QModelIndex &index)
 {
+    if(!canAcceptCut(index))return index;
 
    on_scope_exit t{ [this](){ qDebug().noquote() <<"< QStdItemModel::cut Macro >";
                             undo_stack()->beginMacro("QStdItemModel::cut");},
@@ -243,6 +244,7 @@ bool QStdItemModel::hasCutItem() const
 
 QModelIndex QStdItemModel::paste(const QModelIndex &index,Behaviour b)
 {
+    if(!canAcceptPaste(index))return QModelIndex();
 
     on_scope_exit t{ [this](){ qDebug().noquote() <<"< QStdItemModel::paste Macro >";
                              undo_stack()->beginMacro("QStdItemModel::paste");},
@@ -1129,6 +1131,15 @@ Qt::DropActions QStdItemModel::supportedDropActions () const
     return Qt::CopyAction | Qt::MoveAction;
 }
 
+bool QStdItemModel::canAcceptCut(const QModelIndex&)const
+{
+    return true;
+}
+
+bool QStdItemModel::canAcceptPaste(const QModelIndex&)const
+{
+    return true;
+}
 
 QModelIndex QStdItemModel::index(int row, int column, const QModelIndex &parent) const
 {
