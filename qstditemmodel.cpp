@@ -1901,7 +1901,7 @@ void QStdItemModel::loadFromFile(const QString &filename)
     endResetModel();
 }
 
-void QStdItemModel::saveToFile(const QString& filename)
+void QStdItemModel::saveToFile(const QString& filename,const QModelIndex& selection)
 { scope_tagger t{ "QStdItemModel::saveToFile"};
 
     if (!filename.isEmpty())
@@ -1915,13 +1915,6 @@ void QStdItemModel::saveToFile(const QString& filename)
     QByteArray encoded;
     QDataStream stream(&encoded, QIODevice::WriteOnly);
 
-    /* Qt 4 way
-    QFile file(filename);
-    if (!file.open(QIODevice::WriteOnly|QIODevice::Text))
-    {
-        throw std::runtime_error("File Not open !" );
-    }*/
-
     QSaveFile file(filename);
     file.open(QIODevice::WriteOnly);
 
@@ -1932,9 +1925,13 @@ void QStdItemModel::saveToFile(const QString& filename)
     itemsSet.reserve(1);
     stack.reserve(1);
 
-
-
-        auto item = invisibleRootItem();
+    QStdItem* item;
+    if(selection.isValid())
+    {item=itemFromIndex(selection);
+    }
+     else
+    {    item = invisibleRootItem();
+    }
 
             itemsSet << item;
             stack.push(item);

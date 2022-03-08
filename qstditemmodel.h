@@ -110,7 +110,7 @@ public:
     void save();
     void load();
 
-    void saveToFile(const QString& filename= QString()) ;
+    void saveToFile(const QString& filename= QString(),const QModelIndex& selection=QModelIndex()) ;
     void loadFromFile(const QString& filename=QString()  );
 
     bool contains(unsigned long long int uuid)const;
