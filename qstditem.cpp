@@ -1032,7 +1032,7 @@ out << ptr_data;
 
    \sa {Serializing Qt Data Types}
 */
-QDataStream &operator>>(QDataStream &in, QStdItem &item)
+TEST_LIB_EXPORT QDataStream & operator>>(QDataStream &in, QStdItem &item)
 {
    item.read(in);
    return in;
@@ -1048,7 +1048,7 @@ QDataStream &operator>>(QDataStream &in, QStdItem &item)
 
    \sa {Serializing Qt Data Types}
 */
-QDataStream &operator<<(QDataStream &out, const QStdItem &item)
+TEST_LIB_EXPORT QDataStream &operator<<(QDataStream &out, const QStdItem &item)
 {
    item.write(out);
    return out;
