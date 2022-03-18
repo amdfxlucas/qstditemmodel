@@ -1782,6 +1782,114 @@ QModelIndex QStdItemModel::pathToIndex(const Path &path)
 }
 
 
+/*!
+    On models that support this, moves \a count rows starting with the given
+    \a sourceRow under parent \a sourceParent to row \a destinationChild under
+    parent \a destinationParent.
+
+    Returns \c{true} if the rows were successfully moved; otherwise returns
+    \c{false}.
+
+    The base class implementation does nothing and returns \c{false}.
+
+    If you implement your own model, you can reimplement this function if you
+    want to support moving. Alternatively, you can provide your own API for
+    altering the data.
+
+    \sa beginMoveRows(), endMoveRows()
+*/
+bool QStdItemModel::moveRows(const QModelIndex &sourceParent, int sourceRow, int count,
+                             const QModelIndex &destinationParent, int destinationChild)
+{
+    Q_D(QStdItemModel);
+
+    QStdItem* source_item{};
+    QStdItem* dest_item{};
+    if(sourceParent.isValid())
+    {
+       // source_item = itemFromIndex(sourceParent);
+        source_item= d->itemFromIndex(sourceParent);
+    }else
+    {
+        source_item = invisibleRootItem();
+    }
+
+    if(destinationParent.isValid())
+    {
+        //dest_item=itemFromIndex(destinationParent);
+        dest_item=d->itemFromIndex(destinationParent);
+    }else
+    {
+        dest_item=invisibleRootItem();
+    }
+
+    if(source_item->rowCount()<sourceRow+count // cannot move non-existing (past the end) rows
+            )
+    {   qDebug()<< " cannot move non-existing (past the end) rows ";
+        return false;
+    }
+
+    if( destinationChild - dest_item->rowCount() > 0 )// neighter can rows be inserted past-the end(with a gap between)
+    {
+        qDebug()<< "cannot insert row past-the end  under destination parent";
+        return false;
+    }
+
+    Q_ASSERT(source_item);
+    Q_ASSERT(dest_item);
+
+auto src_parent{createIndex(sourceParent.row(),sourceParent.column(),sourceParent.internalPointer())};
+auto dest_parent{createIndex(destinationParent.row(),destinationParent.column(),destinationParent.internalPointer())};
+
+bool success{true};
+
+     QAbstractItemModel::beginMoveRows(sourceParent, sourceRow, sourceRow+count-1,   destinationParent,  destinationChild);
+
+        //beginMoveRows(src_parent, sourceRow, sourceRow+count,
+        //                              dest_parent,  destinationChild);
+     {
+    // QSignalBlocker lck{this};
+// beginMoveRows(source_item->index(),sourceRow,sourceRow+count,dest_item->index(),destinationChild);
+
+  //   auto tmp_list{source_item->takeRows(sourceRow,count)};
+   auto tmp_list{  source_item->d_func()->removeRows(sourceRow,count,false)};
+
+ //   success={dest_item->d_func()->insertRows(destinationChild,count,tmp_list,false)};
+      success={dest_item->d_func()->insertRows(destinationChild,tmp_list,false)};
+
+     }
+     QAbstractItemModel::endMoveRows();
+
+     source_item->update();
+     dest_item->update();
+
+    return success;
+}
+
+/*!
+    On models that support this, moves \a count columns starting with the given
+    \a sourceColumn under parent \a sourceParent to column \a destinationChild under
+    parent \a destinationParent.
+
+    Returns \c{true} if the columns were successfully moved; otherwise returns
+    \c{false}.
+
+    The base class implementation does nothing and returns \c{false}.
+
+    If you implement your own model, you can reimplement this function if you
+    want to support moving. Alternatively, you can provide your own API for
+    altering the data.
+
+    \sa beginMoveColumns(), endMoveColumns()
+*/
+bool QStdItemModel::moveColumns(const QModelIndex &sourceParent, int sourceColumn, int count,
+                                const QModelIndex &destinationParent, int destinationChild)
+{
+    return false;
+}
+
+
+
 void QStdItemModel::loadFromFile(const QString &filename)
 {
      //qDebug()<< "<QStdItemModel::dropMimeData.´(const QMimeData* data,Qt::DropAction ,int row,int column, const QModelIndex& parent)";

@@ -880,6 +880,27 @@ QList<QStdItem*> QStdItem::takeRow(int row)
   return tmp;
 }
 
+
+QList<QList<QStdItem*>> QStdItem::takeRows(int row,int count)
+{
+
+  scope_tagger t{ "QStdItem::takeRow"};
+
+   Q_D(QStdItem);
+
+  if(row>=rowCount()||count<=0)return {};
+
+  QList<QList<QStdItem*>> tmp_list;
+
+  for(int i{row};i<row+count;++i)
+  {
+      auto tmp{d->takeRow(row)};
+      tmp_list.append(tmp);
+  }
+  update();
+  return tmp_list;
+}
+
 /*!
    Removes \a column without deleting the column items, and returns a list of
    pointers to the removed items. For items in the column that have not been

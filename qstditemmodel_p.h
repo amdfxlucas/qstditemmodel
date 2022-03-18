@@ -189,14 +189,14 @@ public:
 
     const QMap<int, QVariant> itemData() const;
 
-    bool insertRows(int row, int count, const QList<QStdItem*> &items);
+    bool insertRows(int row, int count, const QList<QStdItem*> &items,bool _emit=true);
 
-    QList<QStdItem*> removeRows(int row,int count);
+    QList<QStdItem*> removeRows(int row,int count,bool _emit = true);
     QList<QStdItem*> removeColumns(int column,int count);
     int setRowCount_impl(int m_rows);
     int setColumnCount_impl(int m_columns);
 
-    bool insertRows(int row, const QList<QStdItem*> &items);
+    bool insertRows(int row, const QList<QStdItem*> &items,bool _emit=true);
 
     bool insertColumns(int column, int count, const QList<QStdItem*> &items);
 

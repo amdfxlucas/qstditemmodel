@@ -251,6 +251,7 @@ public:
 
     QStdItem *takeChild(int row, int column = 0);
     QList<QStdItem*> takeRow(int row);
+    QList<QList<QStdItem*>> takeRows(int row,int count);
     QList<QStdItem*> takeColumn(int column);
 
     void sortChildren(int column, Qt::SortOrder order = Qt::AscendingOrder);

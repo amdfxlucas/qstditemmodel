@@ -317,7 +317,8 @@ QList<QStdItem*> m_items;
 return m_items;
 
 }
-QList<QStdItem*>  QStdItemPrivate::removeRows(int m_row,int m_count)
+
+QList<QStdItem*>  QStdItemPrivate::removeRows(int m_row,int m_count,bool _emit)
 {
    Q_Q(QStdItem);
     QList<QStdItem*> m_items;
@@ -325,7 +326,7 @@ scope_tagger t {"QStdItemPrivate::removeRows"};
           if ((m_count < 1) || (m_row < 0) || ((m_row + m_count) > q->rowCount()))
               return QList<QStdItem*>();
 
-          if (model)
+          if (model && _emit)
               model->d_func()->rowsAboutToBeRemoved(q, m_row, m_row + m_count - 1);
 
           int i = childIndex(m_row, 0);
@@ -342,7 +343,7 @@ scope_tagger t {"QStdItemPrivate::removeRows"};
           children.remove(qMax(i, 0), n);
           rows -= m_count;
 
-          if (model)
+          if (model && _emit)
               model->d_func()->rowsRemoved(q, m_row, m_count);
  return m_items;
 
@@ -767,7 +768,7 @@ void QStdItemPrivate::setModel(QStdItemModel *mod)
 
 /*none of the items from 'items' is discarded,
 every one of them will be inserted into the item */
-bool QStdItemPrivate::insertRows(int row, const QList<QStdItem*> &items)
+bool QStdItemPrivate::insertRows(int row, const QList<QStdItem*> &items, bool _emit)
 {
  scope_tagger t {"QStdItemPrivate::insertRows(int row, const QList<QStdItem*>& items)"} ;
 
@@ -776,11 +777,13 @@ bool QStdItemPrivate::insertRows(int row, const QList<QStdItem*> &items)
    Q_Q(QStdItem);
 
    if ((row < 0) || (row > rowCount()) || items.isEmpty())
-   {return false;}
+   {qDebug() << "invalid arguments!";
+       return false;
+   }
 
    int count = items.count();
 
-   if (model)
+   if (model && _emit)
        model->d_func()->rowsAboutToBeInserted(q, row, row + count - 1);
 
    if (rowCount() == 0)
@@ -818,7 +821,7 @@ bool QStdItemPrivate::insertRows(int row, const QList<QStdItem*> &items)
            item->d_func()->lastKnownIndex = index;
    }
 
-   if (model)
+   if (model && _emit)
        model->d_func()->rowsInserted(q, row, count);
 
 
@@ -873,18 +876,18 @@ int QStdItemPrivate::setRowCount_impl(int m_rows)
 
 /*if columnCount()x count is less then items.count() the remaining items from
 'items' wont be inserted into the item but instead be discarded*/
-bool QStdItemPrivate::insertRows(int row, int count, const QList<QStdItem*> &items)
+bool QStdItemPrivate::insertRows(int row, int count, const QList<QStdItem*> &items, bool _emit)
 {
    scope_tagger t{ "QStdItemPrivate::insertRows(int row,int count, const QList<QStdItem*>& items)"};
 
    Q_Q(QStdItem);
 
    if ((count < 1) || (row < 0) || (row > rowCount()) || count == 0)
-   {
+   {qDebug()<<"invalid arguments !";
        return false;
    }
 
-   if (model)
+   if (model&& _emit)
        model->d_func()->rowsAboutToBeInserted(q, row, row + count - 1);
 
    if (rowCount() == 0)
@@ -936,7 +939,7 @@ bool QStdItemPrivate::insertRows(int row, int count, const QList<QStdItem*> &ite
        }
    }
 
-   if (model)
+   if (model && _emit)
        model->d_func()->rowsInserted(q, row, count);
 
 

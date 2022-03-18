@@ -153,6 +153,20 @@ virtual bool canAcceptPaste(const QModelIndex&)const;
     bool removeRows(int row, int count, const QModelIndex &parent = QModelIndex()) override;
     bool removeColumns(int column, int count, const QModelIndex &parent = QModelIndex()) override;
 
+
+
+    virtual bool	moveColumns(const QModelIndex &sourceParent, int sourceColumn, int count,
+                                const QModelIndex &destinationParent, int destinationChild)override;
+
+    // inlined (no need to override)
+    //   bool	moveColumn(const QModelIndex &sourceParent, int sourceColumn,
+    //                      const QModelIndex &destinationParent, int destinationChild) ;
+   // bool	moveRow(const QModelIndex &sourceParent, int sourceRow,
+   //                 const QModelIndex &destinationParent, int destinationChild);
+
+    virtual bool	moveRows(const QModelIndex &sourceParent, int sourceRow, int count,
+                             const QModelIndex &destinationParent, int destinationChild)override;
+
     Qt::ItemFlags flags(const QModelIndex &index) const override;
     Qt::DropActions supportedDropActions() const override;
 
@@ -234,6 +248,7 @@ protected:
 
     void setModel(QStdItem* item)
     {item->setModel(this);}
+     Q_DECLARE_PRIVATE(QStdItemModel)
 private:
 
 
@@ -244,7 +259,7 @@ private:
     friend class QStdItemPrivate;
     friend class QStdItem;
     Q_DISABLE_COPY(QStdItemModel)
-    Q_DECLARE_PRIVATE(QStdItemModel)
+
 
     Q_PRIVATE_SLOT(d_func(), void _q_emitItemChanged(const QModelIndex &topLeft,
                                                      const QModelIndex &bottomRight))
