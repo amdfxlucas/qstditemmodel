@@ -170,6 +170,7 @@ public:
         return columns;
     }
     void childDeleted(QStdItem *child);
+    QList<QStdItem*> get_children()const{return children;}
 
     void setModel(QStdItemModel *mod);
 

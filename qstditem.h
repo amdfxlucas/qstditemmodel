@@ -227,6 +227,8 @@ public:
 
     bool hasChildren() const;
     QStdItem *child(int row, int column = 0) const;
+    QList<QStdItem*> children()const;
+    QList<QModelIndex> childIndexes()const;
     void setChild(int row, int column, QStdItem *item);
     inline void setChild(int row, QStdItem *item);
 

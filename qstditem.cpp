@@ -534,6 +534,31 @@ QModelIndex QStdItem::index() const
    return d->model ? d->model->indexFromItem(this) : QModelIndex();
 }
 
+QList<QStdItem*> QStdItem::children()const
+{ Q_D(const QStdItem);
+    return d->get_children();
+}
+
+QList<QModelIndex> QStdItem::childIndexes()const
+{
+    Q_D(const QStdItem);
+    auto childs{d->get_children()};
+
+    QModelIndexList indexes;
+
+    for(auto* child : childs)
+    {
+        if(child)
+        {
+            indexes.append(child->index());
+        }
+
+    }
+
+return indexes;
+
+}
+
 /*!
  Returns the QStdItemModel that this item belongs to.
 
