@@ -3,7 +3,6 @@
 #ifndef QSTDITEM_H
 #define QSTDITEM_H
 
-#include "import_export.h"
 
 //#include <QUndoCommand>
 #include "undostack.h"
@@ -59,7 +58,7 @@ class QStdItemPrivate;
 
 
 
-class TEST_LIB_EXPORT QStdItem
+class QStdItem
 {
 
 
