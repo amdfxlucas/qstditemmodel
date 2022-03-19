@@ -98,7 +98,7 @@ inline QDebug &operator<<(QDebug &debug, const QStdItemData &data)
 
 
 
-class TEST_LIB_EXPORT QStdItemPrivate
+class QStdItemPrivate
         : public QObject
 {
 Q_OBJECT
