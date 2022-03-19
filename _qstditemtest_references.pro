@@ -28,6 +28,7 @@ INCLUDEPATH += "C:\Qt\6.1.2\msvc2019_64\include\QtGui\6.1.2\QtGui"
 
 unix:
 {
+
 INCLUDEPATH+= "/home/lucas/Qt/6.1.3/gcc_64/include/QtGui/6.1.3"
 INCLUDEPATH+="/home/lucas/Qt/6.1.3/gcc_64/include/QtCore/6.1.3"
 }
@@ -35,6 +36,7 @@ INCLUDEPATH+="/home/lucas/Qt/6.1.3/gcc_64/include/QtCore/6.1.3"
 
 HEADERS     =    aqp.hpp \
     import_export.h \
+    qstditemmodel_commands.h \
     qundogroup.h \
     myqtreeview.h \
     path.h \
@@ -44,14 +46,11 @@ HEADERS     =    aqp.hpp \
     qstditemmodel_p.h \
     reference_controller.h \
     scope_tagger.h \
-  #  ui_mainwindow.h \
     undostack.h \
     undostack_p.h
 
-#RESOURCES   = editabletreemodel.qrc
-
-SOURCES     =   aqp.cpp \
-            #  qstditemmodel_commands.cpp \
+SOURCES     = aqp.cpp \
+              qstditemmodel_commands.cpp \
               qundogroup.cpp \
               myqtreeview.cpp \
               qstditem.cpp \
@@ -61,7 +60,3 @@ SOURCES     =   aqp.cpp \
               qstditemprivate.cpp \
               reference_controller.cpp \
               undostack.cpp
-
-
-
-

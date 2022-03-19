@@ -12,7 +12,8 @@ class QStdItem;
 
 class reference_controller;
 
-class reference : public QObject
+class reference
+ : public QObject
 {Q_OBJECT
 
 public  slots:
@@ -105,9 +106,12 @@ inline uint qHash(const reference& r)
 
 
 
-class reference_controller : public QObject
+class reference_controller
+      : public QObject
 {Q_OBJECT
 public slots:
+
+    void free_uuid(unsigned long long uuid);
 
     void validReference(reference*);
 
@@ -116,7 +120,8 @@ public slots:
   //  void ReceiveIndexForItem(QModelIndex,QStdItem*);
 
 public:
-
+int cmd_count()const;
+void clear();
 
     reference* new_reference(QStdItem* i, QModelIndex idx, QStdItem::StdItemCmd* cmd);
      reference* new_reference(QStdItem* i,  QStdItem::StdItemCmd* cmd);
@@ -124,9 +129,14 @@ public:
     static reference_controller* get_instance()
     {return &_instance_;}
 
+    void lock(bool lck);
+
+public slots:
+    void modelDestroyed(QObject*); // frees all references into this model
+
 private:
 
-
+    bool locked;
 
     static reference_controller _instance_;
     reference_controller();

@@ -12,9 +12,11 @@
 
 #include <QtGui/qtguiglobal.h>
 #include <QtCore/qabstractitemmodel.h>
+//#include "qabstractitemmodel.h"
 #include <QtGui/qbrush.h>
 #include <QtGui/qfont.h>
 #include <QtGui/qicon.h>
+#include <QtCore/QObject>
 #ifndef QT_NO_DATASTREAM
 #include <QtCore/qdatastream.h>
 #endif
@@ -28,8 +30,15 @@ QT_BEGIN_NAMESPACE
 
 
 
+using time_point_type = std::chrono::time_point<std::chrono::system_clock,std::chrono::minutes >;
+using duration_type = std::chrono::minutes;
 
-
+Q_DECLARE_METATYPE_IMPL(time_point_type)
+Q_DECLARE_METATYPE(duration_type)
+QDataStream &operator<<(QDataStream &out, const time_point_type &myObj);
+QDataStream &operator>>(QDataStream &in, time_point_type &myObj);
+QDataStream &operator<<(QDataStream &out, const duration_type &myObj);
+QDataStream &operator>>(QDataStream &in, duration_type &myObj);
 class QStdItemData
 {
 public:
@@ -71,6 +80,8 @@ private:
     class SetDataCmd;
 
 public:
+
+    // gets the items unique identifier
     unsigned long long uuid()const ;
 
     QStdItem();
@@ -212,8 +223,12 @@ public:
     int columnCount() const;
     void setColumnCount(int columns);
 
+    bool hasChild(unsigned long long int uuid)const;
+
     bool hasChildren() const;
     QStdItem *child(int row, int column = 0) const;
+    QList<QStdItem*> children()const;
+    QList<QModelIndex> childIndexes()const;
     void setChild(int row, int column, QStdItem *item);
     inline void setChild(int row, QStdItem *item);
 
@@ -236,6 +251,7 @@ public:
 
     QStdItem *takeChild(int row, int column = 0);
     QList<QStdItem*> takeRow(int row);
+    QList<QList<QStdItem*>> takeRows(int row,int count);
     QList<QStdItem*> takeColumn(int column);
 
     void sortChildren(int column, Qt::SortOrder order = Qt::AscendingOrder);
@@ -253,16 +269,21 @@ public:
 
     QStdItem(const QStdItem &other);
     QStdItem(QStdItemPrivate &dd);
+     QStdItem(QStdItemPrivate *dd);
     QStdItem &operator=(const QStdItem &other);
+        virtual void update();
+
 protected:
+
+
 
     void setModel(QStdItemModel*);
     QScopedPointer<QStdItemPrivate> d_ptr;
 
     void emitDataChanged();
-
-private:
     Q_DECLARE_PRIVATE(QStdItem)
+private:
+
     friend class QStdItemModelPrivate;
     friend class QStdItemModel;
 

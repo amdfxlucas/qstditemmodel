@@ -40,6 +40,9 @@
 
 
 #include "qstditemmodel.h"
+
+#include "qstditemmodel_commands.h"
+
 #include "qstditemmodel_p.h"
 
 #include <QtCore/qdatetime.h>
@@ -48,6 +51,7 @@
 #include <QtCore/qpair.h>
 #include <QtCore/qvariant.h>
 #include <QtCore/qstringlist.h>
+#include <QTimer>
 #include <QtCore/qbitarray.h>
 #include <QtCore/qmimedata.h>
 #include <QtCore/qiodevice.h>
@@ -105,6 +109,39 @@ QStdItemModel::QStdItemModel(QObject *parent)
     //d->root->d_func()->setModel(this);
     d->root->setModel(this);
        m_stack->endMacro();
+
+  QTimer::singleShot(0, this, SLOT(connectRefCtrl()));
+//       connect(this,&QObject::destroyed,reference_controller::get_instance(),
+//               &reference_controller::modelDestroyed);
+}
+
+
+  QModelIndexList QStdItemModel::find(const QModelIndex& start_node, int role, const QVariant& key) const
+{
+    QModelIndexList hits;
+    auto search_key = [this,&hits,&role,&key](const auto* item)
+    {
+        if(item)
+        {
+            if(item->data(role)==key)
+            {
+                hits<<item->index();
+            }
+        }
+    };
+
+    iterate(search_key,start_node);
+
+    return hits;
+
+}
+
+
+void QStdItemModel::connectRefCtrl()
+{
+ /*   connect(this,&QObject::destroyed,reference_controller::get_instance(),
+                   &reference_controller::modelDestroyed);
+                   */
 }
 
 /*!
@@ -125,6 +162,11 @@ QStdItemModel::QStdItemModel(int rows, int columns, QObject *parent)
   //  d->root->d_func()->setModel(this);
       d->root->setModel(this);
     m_stack->endMacro();
+
+      QTimer::singleShot(0, this, SLOT(connectRefCtrl()));
+
+ //   connect(this,&QObject::destroyed,reference_controller::get_instance(),
+ //           &reference_controller::modelDestroyed);
 }
 
 
@@ -134,6 +176,11 @@ QStdItemModel::QStdItemModel(QStdItemModelPrivate &dd, QObject *parent)
     Q_D(QStdItemModel);
      m_stack= new UndoStack(this);
     d->init();
+
+
+      QTimer::singleShot(0, this, SLOT(connectRefCtrl()));
+  //  connect(this,&QObject::destroyed,reference_controller::get_instance(),
+  //          &reference_controller::modelDestroyed);
 }
 
 /*!
@@ -141,11 +188,80 @@ QStdItemModel::QStdItemModel(QStdItemModelPrivate &dd, QObject *parent)
 */
 QStdItemModel::~QStdItemModel()
 {
+    // hässlicher workaround, der nur ausnahmsweise funktioniert,
+    // da es lediglich ein einziges modell in der anwendung gibt
+  //  reference_controller::get_instance()->clear();
+
     Q_D(QStdItemModel);
     delete d->itemPrototype;
     qDeleteAll(d->columnHeaderItems);
     qDeleteAll(d->rowHeaderItems);
     d->root.reset();
+}
+
+
+Path QStdItemModel::parentPath(const Path& p )
+{
+    if(p.length() >=2)
+    {return Path(p.cbegin(),p.cend()-1);    }
+    else
+    {
+        return Path()<<PathItem(-1,-1);
+    }
+}
+
+
+QModelIndex QStdItemModel::cut(const QModelIndex &index)
+{
+    if(!canAcceptCut(index))return index;
+
+   on_scope_exit t{ [this](){ qDebug().noquote() <<"< QStdItemModel::cut Macro >";
+                            undo_stack()->beginMacro("QStdItemModel::cut");},
+                    [this](){   qDebug().noquote()<< "</ QStdItemModel::cut Macro>";
+                                undo_stack()->endMacro();}
+                  };
+
+    auto cut_cmd = new CutItemCmd(this,index) ;
+    undo_stack()->push(cut_cmd);
+
+ //   auto idx{undo_stack()->index() };
+   // const QStdItemModel::QStdItemModelCmd* cmd {static_cast<const QStdItemModel::QStdItemModelCmd*>(undo_stack()->command(idx) ) };
+
+    if(cut_cmd)
+    {
+        return cut_cmd->returnValue().value<QModelIndex>();
+    }
+
+
+  return QModelIndex();
+
+}
+
+bool QStdItemModel::hasCutItem() const
+{
+    return d_func()->hasCutItem();
+}
+
+QModelIndex QStdItemModel::paste(const QModelIndex &index,Behaviour b)
+{
+    if(!canAcceptPaste(index))return QModelIndex();
+
+    on_scope_exit t{ [this](){ qDebug().noquote() <<"< QStdItemModel::paste Macro >";
+                             undo_stack()->beginMacro("QStdItemModel::paste");},
+                     [this](){   qDebug().noquote()<< "</ QStdItemModel::paste Macro>";
+                                 undo_stack()->endMacro();}
+                   };
+
+     auto paste_cmd = new PasteItemCmd(this,index,b) ;
+     undo_stack()->push(paste_cmd);
+
+     if(paste_cmd)
+     {
+         return paste_cmd->returnValue().value<QModelIndex>();
+     }
+
+
+   return QModelIndex();
 }
 
 /*!
@@ -167,9 +283,27 @@ bool QStdItemModel::canDropMimeData(const QMimeData *data,
 {
     scope_tagger t {"QStdItemModel::canDropMimeData"};
 
+/* This is the body of QAbstractItemModel::canDropMimeData
+     Q_UNUSED(row);
+    Q_UNUSED(column);
+    Q_UNUSED(parent);
+
+    if (!(action & supportedDropActions()))
+        return false;
+
+    const QStringList modelTypes = mimeTypes();
+    for (int i = 0; i < modelTypes.count(); ++i) {
+        if (data->hasFormat(modelTypes.at(i)))
+            return true;
+    }
+    return false;
+*/
+
 
     auto tmp{ QAbstractItemModel::canDropMimeData(data,action,row,column,parent)};
-    qDebug() << tmp;
+
+
+
     return tmp;
 }
 
@@ -193,7 +327,10 @@ void QStdItemModel::clear()
 
 
     m_stack->clear(); // forget the command history
-
+auto refctrl{reference_controller::get_instance()};
+auto cnd_before{refctrl->cmd_count()};
+refctrl->clear();
+qDebug()<<refctrl->cmd_count();
     Q_D(QStdItemModel);
 
     auto text{QString("clear")};
@@ -204,9 +341,11 @@ void QStdItemModel::clear()
     beginResetModel();
     d->root.reset(new QStdItem);
 
-    d->root->setFlags(Qt::ItemIsDropEnabled);
+
+   // d->root->setFlags(Qt::ItemIsDropEnabled);
   //  d->root->d_func()->setModel(this);
       d->root->setModel(this);
+         d->root->d_func()->setFlags(Qt::ItemIsDropEnabled);
 
     qDeleteAll(d->columnHeaderItems);
     d->columnHeaderItems.clear();
@@ -426,70 +565,7 @@ QStdItem *QStdItemModel::invisibleRootItem() const
     setVerticalHeaderItem()
 */
 
-void QStdItemModel::SetHHeaderItemCmd::undo()
-{
-impl(false);
-}
 
-void QStdItemModel::SetHHeaderItemCmd::impl(bool redo)
-{
-      UndoStackLock lock{_this_model_->undo_stack()}; // RAII class
-
-    QStdItemModelPrivate* d = _this_model_->d_func()           ;
-
-    if (m_column < 0)
-        return;
-
-    //if (_this_model_->columnCount() <= m_column)
-
-  //  if (prev_col_count <= m_column)
-    if(change_col_count)
-    {   if( redo )
-        {_this_model_->setColumnCount(m_column + 1);}
-        else
-        {
-            _this_model_->setColumnCount(prev_col_count );
-        }
-    }
-
-    QStdItem *oldItem = d->columnHeaderItems.at(m_column);
-
-    if (m_item == oldItem)
-    {
-
-        return;
-    }
-
-    if (m_item)
-    {
-        if (m_item->model() == nullptr)
-        {
-            m_item->setModel(_this_model_);
-        } else
-        {
-            qWarning("QStdItem::setHorizontalHeaderItem: Ignoring duplicate insertion of item %p",
-                     m_item);
-
-
-            return;
-        }
-    }
-
-    if (oldItem)
-        oldItem->setModel(nullptr);
-    //delete oldItem;
-
-
-    d->columnHeaderItems.replace(m_column, m_item);
-    m_item= oldItem;
-    emit _this_model_->headerDataChanged(Qt::Horizontal, m_column, m_column);
-}
-
-void QStdItemModel::SetHHeaderItemCmd::redo()
-{
-
-    impl(true);
-}
 
 void QStdItemModel::setHorizontalHeaderItem(int column, QStdItem *item)
 {
@@ -1055,6 +1131,15 @@ Qt::DropActions QStdItemModel::supportedDropActions () const
     return Qt::CopyAction | Qt::MoveAction;
 }
 
+bool QStdItemModel::canAcceptCut(const QModelIndex&)const
+{
+    return true;
+}
+
+bool QStdItemModel::canAcceptPaste(const QModelIndex&)const
+{
+    return true;
+}
 
 QModelIndex QStdItemModel::index(int row, int column, const QModelIndex &parent) const
 {
@@ -1396,7 +1481,6 @@ QMimeData *QStdItemModel::mimeData(const QModelIndexList &indexes) const
 { scope_tagger t{ "QStdItemModel::mimeData"};
 
 
-
     QMimeData *data = QAbstractItemModel::mimeData(indexes);
     if (!data)
     {     
@@ -1536,7 +1620,12 @@ bool QStdItemModel::dropMimeData(const QMimeData *data, Qt::DropAction action,
     {
         int r, c;
         QStdItem *item = d->createItem();
-        item->setModel(this); // lucas 14.02.22
+      //  item->setModel(this); // lucas 14.02.22
+        item->d_func()->setModel(this);
+
+      //  auto item = new QStdItem(this);
+        // damit funktioniert das auto-update nach beenden eines DragDrop Vorgangs nicht mehr
+
         stream >> r >> c;
         d->decodeDataRecursive(stream, item);
 
@@ -1631,6 +1720,14 @@ bool QStdItemModel::dropMimeData(const QMimeData *data, Qt::DropAction action,
     return true;
 }
 
+bool QStdItemModel::contains(unsigned long long int uuid)const
+{
+    return d_func()->root->hasChild(uuid);
+}
+bool QStdItemModel::contains(QStdItem* item)const
+{
+    return contains(item->uuid());
+}
 
 QString QStdItemModel::filename() const
 {
@@ -1670,13 +1767,155 @@ Path QStdItemModel::pathFromIndex(const QModelIndex &index)
 
 QModelIndex QStdItemModel::pathToIndex(const Path &path)
 {
-   QModelIndex iter;
+
+    UndoStackLock lck{undo_stack()};
+
+     QModelIndex iter;
+    //QModelIndex iter{-1,-1,invisibleRootItem(),this};
+    // auto iter{createIndex(-1,-1,invisibleRootItem() )};
+
    for (int i=0;i<path.size();i++)
    {
        iter = this->index(path[i].first, path[i].second, iter);
    }
    return iter;
 }
+
+
+/*!
+    On models that support this, moves \a count rows starting with the given
+    \a sourceRow under parent \a sourceParent to row \a destinationChild under
+    parent \a destinationParent.
+
+    Returns \c{true} if the rows were successfully moved; otherwise returns
+    \c{false}.
+
+    The base class implementation does nothing and returns \c{false}.
+
+    If you implement your own model, you can reimplement this function if you
+    want to support moving. Alternatively, you can provide your own API for
+    altering the data.
+
+    \sa beginMoveRows(), endMoveRows()
+*/
+
+/*bool QStdItemModel::moveRows(const QModelIndex &sourceParent, int sourceRow, int count,
+                             const QModelIndex &destinationParent, int destinationChild)
+{
+    Q_D(QStdItemModel);
+
+    QStdItem* source_item{};
+    QStdItem* dest_item{};
+    if(sourceParent.isValid())
+    {
+       // source_item = itemFromIndex(sourceParent);
+        source_item= d->itemFromIndex(sourceParent);
+    }else
+    {
+        source_item = invisibleRootItem();
+    }
+
+    if(destinationParent.isValid())
+    {
+        //dest_item=itemFromIndex(destinationParent);
+        dest_item=d->itemFromIndex(destinationParent);
+    }else
+    {
+        dest_item=invisibleRootItem();
+    }
+
+    if(source_item->rowCount()<sourceRow+count // cannot move non-existing (past the end) rows
+            )
+    {   qDebug()<< " cannot move non-existing (past the end) rows ";
+        return false;
+    }
+
+    if( destinationChild - dest_item->rowCount() > 0 )// neighter can rows be inserted past-the end(with a gap between)
+    {
+        qDebug()<< "cannot insert row past-the end  under destination parent";
+        return false;
+    }
+
+    Q_ASSERT(source_item);
+    Q_ASSERT(dest_item);
+
+auto src_parent{createIndex(sourceParent.row(),sourceParent.column(),sourceParent.internalPointer())};
+auto dest_parent{createIndex(destinationParent.row(),destinationParent.column(),destinationParent.internalPointer())};
+
+bool success{true};
+
+     QAbstractItemModel::beginMoveRows(sourceParent, sourceRow, sourceRow+count-1,   destinationParent,  destinationChild);
+
+        //beginMoveRows(src_parent, sourceRow, sourceRow+count,
+        //                              dest_parent,  destinationChild);
+     {
+    // QSignalBlocker lck{this};
+// beginMoveRows(source_item->index(),sourceRow,sourceRow+count,dest_item->index(),destinationChild);
+
+  //   auto tmp_list{source_item->takeRows(sourceRow,count)};
+   auto tmp_list{  source_item->d_func()->removeRows(sourceRow,count,false)};
+
+ //   success={dest_item->d_func()->insertRows(destinationChild,count,tmp_list,false)};
+      success={dest_item->d_func()->insertRows(destinationChild,tmp_list,false)};
+
+     }
+     QAbstractItemModel::endMoveRows();
+
+     source_item->update();
+     dest_item->update();
+
+    return success;
+}
+*/
+
+bool QStdItemModel::moveRows(const QModelIndex &sourceParent, int sourceRow, int count,
+                             const QModelIndex &destinationParent, int destinationChild)
+{
+
+
+
+
+    on_scope_exit t{ [this](){ qDebug().noquote() <<"< QStdItemModel::moveRows Macro >";
+                             undo_stack()->beginMacro("QStdItemModel::moveRows");},
+                     [this](){   qDebug().noquote()<< "</ QStdItemModel::moveRows Macro>";
+                                 undo_stack()->endMacro();}
+                   };
+
+    auto cmd = new MoveRowsCmd(sourceParent,sourceRow,count,
+                               destinationParent,destinationChild);
+     undo_stack()->push(cmd);
+
+     if(cmd)
+     {
+         return cmd->returnValue().toBool();
+     }
+
+    return false;
+
+}
+
+/*!
+    On models that support this, moves \a count columns starting with the given
+    \a sourceColumn under parent \a sourceParent to column \a destinationChild under
+    parent \a destinationParent.
+
+    Returns \c{true} if the columns were successfully moved; otherwise returns
+    \c{false}.
+
+    The base class implementation does nothing and returns \c{false}.
+
+    If you implement your own model, you can reimplement this function if you
+    want to support moving. Alternatively, you can provide your own API for
+    altering the data.
+
+    \sa beginMoveColumns(), endMoveColumns()
+*/
+bool QStdItemModel::moveColumns(const QModelIndex &sourceParent, int sourceColumn, int count,
+                                const QModelIndex &destinationParent, int destinationChild)
+{
+    return false;
+}
+
 
 
 void QStdItemModel::loadFromFile(const QString &filename)
@@ -1761,7 +2000,8 @@ void QStdItemModel::loadFromFile(const QString &filename)
     {
         int r, c;
         QStdItem *item = d->createItem();
-        item->setModel(this); // lucas 14.02.22
+      //  item->setModel(this); // lucas 14.02.22
+          item->d_func()->setModel(this); // lucas 14.02.22
         stream >> r >> c;
         d->decodeDataRecursive(stream, item);
 
@@ -1777,7 +2017,8 @@ void QStdItemModel::loadFromFile(const QString &filename)
  beginResetModel();
 
     d->root.reset(items.takeLast());
-    invisibleRootItem()->setFlags(Qt::ItemIsDropEnabled             );
+    //invisibleRootItem()->setFlags(Qt::ItemIsDropEnabled             );
+    invisibleRootItem()->d_func()->setFlags(Qt::ItemIsDropEnabled             );
 
 
 
@@ -1796,7 +2037,7 @@ void QStdItemModel::loadFromFile(const QString &filename)
     endResetModel();
 }
 
-void QStdItemModel::saveToFile(const QString& filename)
+void QStdItemModel::saveToFile(const QString& filename,const QModelIndex& selection)
 { scope_tagger t{ "QStdItemModel::saveToFile"};
 
     if (!filename.isEmpty())
@@ -1810,13 +2051,6 @@ void QStdItemModel::saveToFile(const QString& filename)
     QByteArray encoded;
     QDataStream stream(&encoded, QIODevice::WriteOnly);
 
-    /* Qt 4 way
-    QFile file(filename);
-    if (!file.open(QIODevice::WriteOnly|QIODevice::Text))
-    {
-        throw std::runtime_error("File Not open !" );
-    }*/
-
     QSaveFile file(filename);
     file.open(QIODevice::WriteOnly);
 
@@ -1827,9 +2061,13 @@ void QStdItemModel::saveToFile(const QString& filename)
     itemsSet.reserve(1);
     stack.reserve(1);
 
-
-
-        auto item = invisibleRootItem();
+    QStdItem* item;
+    if(selection.isValid())
+    {item=itemFromIndex(selection);
+    }
+     else
+    {    item = invisibleRootItem();
+    }
 
             itemsSet << item;
             stack.push(item);
