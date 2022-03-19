@@ -77,6 +77,7 @@ public slots:
 
 
 private slots:
+    bool eventFilter(QObject* object, QEvent* event )override;
     void setCurrentIndex(const QModelIndex &index);
 
     void insertChild();
@@ -84,6 +85,8 @@ private slots:
     void insertRow();
     bool removeColumn();
     void removeRow();
+
+    void moveRows();
 
     void undo();
     void redo();

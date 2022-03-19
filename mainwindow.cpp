@@ -50,6 +50,8 @@
 
 #include "mainwindow.h"
 #include "qstditemmodel.h"
+#include <QHelpEvent>
+#include <QToolTip>
 //#include "treemodel.h"
 //  #include <QUndoView>
 #include <QFile>
@@ -59,6 +61,47 @@
 #include "aqp.hpp"
 
 #include <QFileDialog>
+
+void MainWindow::moveRows()
+{
+    // show a dialog which gets sourceParent, destinationParent, sourceRow, count , destinationChild
+    // from user and calls model->moveRows(..)
+
+}
+
+bool MainWindow::eventFilter(QObject *watched, QEvent *event)
+{
+    if(event->type() == QEvent::ToolTip)
+    {
+        if(watched==view)
+        {
+            auto * help{dynamic_cast<QHelpEvent*>(event)};
+            if(help)
+            {
+                int cursor_w{25};
+                int cursor_h{22};
+
+                auto point{view->viewport()->mapToGlobal(help->pos() )};
+                auto cursor_pos{view->mapFromGlobal(cursor().pos())};
+                auto cursor_hotspot{cursor().hotSpot()};
+                auto gpoint{help->globalPos()};
+               // auto index{view->indexAt(point)};
+                //auto index{view->indexAt(help->pos())};
+                auto actual_point{QPoint(cursor_pos.x()-cursor_w,
+                                         cursor_pos.y()-cursor_h )};
+
+                auto g_actual_point{view->viewport()->mapToGlobal(actual_point)};
+                auto index{view->indexAt(actual_point)};
+                if(!index.isValid())return false;
+
+                QToolTip::showText( g_actual_point,
+                                   QString::number(model->itemFromIndex(index)->uuid() )
+                                                   );
+            }
+
+        }
+    }
+}
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -78,6 +121,8 @@ MainWindow::MainWindow(QWidget *parent)
   //  view->setDragDropMode(QAbstractItemView::DragDrop);
       view->setDragDropMode(QAbstractItemView::InternalMove);
 
+      view->installEventFilter(this);
+
     for (int column = 0; column < model->columnCount(); ++column)
         view->resizeColumnToContents(column);
 
@@ -92,6 +137,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(removeRowAction, &QAction::triggered, this, &MainWindow::removeRow);
     connect(removeColumnAction, &QAction::triggered, this, &MainWindow::removeColumn);
     connect(insertChildAction, &QAction::triggered, this, &MainWindow::insertChild);
+    connect(moveRowsAction, &QAction::triggered, this, &MainWindow::moveRows);
 
 
 

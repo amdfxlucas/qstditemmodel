@@ -41,6 +41,7 @@ public:
     QAction* pasteItemAction;
 
     QAction *insertRowAction;
+    QAction* moveRowsAction;
     QAction *removeRowAction;
     QAction *insertColumnAction;
     QAction *removeColumnAction;
@@ -69,6 +70,8 @@ public:
         redo_action=new QAction(MainWindow);
         redo_action->setObjectName(QString::fromUtf8("redoAction"));
 
+         moveRowsAction= new QAction(MainWindow);
+         moveRowsAction->setText("moveRows");
 
         cutItemAction = new QAction(MainWindow);
         cutItemAction->setText("cut")        ;
