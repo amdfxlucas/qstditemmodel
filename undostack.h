@@ -39,7 +39,7 @@
 
 #ifndef QUNDOSTACK_H
 #define QUNDOSTACK_H
-#include "import_export.h"
+
 
 #include <QtGui/qtguiglobal.h>
 #include <QtCore/qobject.h>
@@ -94,7 +94,7 @@ private:
 
 #if QT_CONFIG(undostack)
 
-class TEST_LIB_EXPORT UndoStack
+class  UndoStack
         : public QObject
 {
     Q_OBJECT
@@ -169,7 +169,7 @@ private:
   //  bool push_lock{false}; // moved to undostack_private to not break binary compatibility
 };
 
-class TEST_LIB_EXPORT UndoStackLock
+class  UndoStackLock
 {
 private:
     bool prev_state;

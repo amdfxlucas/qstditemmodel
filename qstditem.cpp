@@ -76,11 +76,11 @@ QDataStream &operator>>(QDataStream &in, time_point_type &myObj)
 
 QDataStream &operator<<(QDataStream &out, const duration_type &myObj)
 {
-    out<< myObj.count();
+    out<<static_cast<qlonglong>( myObj.count());
     return out;
 }
 QDataStream &operator>>(QDataStream &in, duration_type &myObj)
-{   int count{0};
+{   qlonglong count{0};
     in >> count;
     myObj=duration_type(count);
     return in;
@@ -1078,7 +1078,7 @@ out << ptr_data;
 
    \sa {Serializing Qt Data Types}
 */
-TEST_LIB_EXPORT QDataStream & operator>>(QDataStream &in, QStdItem &item)
+ QDataStream & operator>>(QDataStream &in, QStdItem &item)
 {
    item.read(in);
    return in;
@@ -1094,7 +1094,7 @@ TEST_LIB_EXPORT QDataStream & operator>>(QDataStream &in, QStdItem &item)
 
    \sa {Serializing Qt Data Types}
 */
-TEST_LIB_EXPORT QDataStream &operator<<(QDataStream &out, const QStdItem &item)
+ QDataStream &operator<<(QDataStream &out, const QStdItem &item)
 {
    item.write(out);
    return out;
