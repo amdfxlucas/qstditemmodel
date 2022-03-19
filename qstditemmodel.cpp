@@ -1798,7 +1798,8 @@ QModelIndex QStdItemModel::pathToIndex(const Path &path)
 
     \sa beginMoveRows(), endMoveRows()
 */
-bool QStdItemModel::moveRows(const QModelIndex &sourceParent, int sourceRow, int count,
+
+/*bool QStdItemModel::moveRows(const QModelIndex &sourceParent, int sourceRow, int count,
                              const QModelIndex &destinationParent, int destinationChild)
 {
     Q_D(QStdItemModel);
@@ -1864,6 +1865,33 @@ bool success{true};
      dest_item->update();
 
     return success;
+}
+*/
+
+bool QStdItemModel::moveRows(const QModelIndex &sourceParent, int sourceRow, int count,
+                             const QModelIndex &destinationParent, int destinationChild)
+{
+
+
+
+
+    on_scope_exit t{ [this](){ qDebug().noquote() <<"< QStdItemModel::moveRows Macro >";
+                             undo_stack()->beginMacro("QStdItemModel::moveRows");},
+                     [this](){   qDebug().noquote()<< "</ QStdItemModel::moveRows Macro>";
+                                 undo_stack()->endMacro();}
+                   };
+
+    auto cmd = new MoveRowsCmd(sourceParent,sourceRow,count,
+                               destinationParent,destinationChild);
+     undo_stack()->push(cmd);
+
+     if(cmd)
+     {
+         return cmd->returnValue().toBool();
+     }
+
+    return false;
+
 }
 
 /*!

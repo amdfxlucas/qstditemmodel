@@ -80,6 +80,7 @@ class TEST_LIB_EXPORT QStdItemModel
 protected:
     class CutItemCmd;
     class PasteItemCmd;
+    class MoveRowsCmd;
 
     class QStdItemModelCmd    ; // base class for commands
 

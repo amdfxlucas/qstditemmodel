@@ -20,6 +20,49 @@ public:
   virtual  QVariant returnValue()const;
 };
 
+class QStdItemModel::MoveRowsCmd
+:public QStdItemModelCmd
+{
+
+ /*Path m_source_path;
+ Path m_dest_path;
+ int src_row,count,dest_child;*/
+
+    /*
+     vielleicht ist es hier notwendig
+     sich zwei 'reference' s (src_ref & dest_ref )zu halten,
+     eins zu jedem Item (refs to parent-items pointed to by m_src_path & m_dest_path )
+*/
+
+QPersistentModelIndex sourceParent;
+QPersistentModelIndex destinationParent;
+int sourceRow,count,destinationChild;
+
+bool is_valid_cmd{true};
+
+bool m_return_value{false};
+
+QStdItem* src_item();
+QStdItem* dest_item();
+void check_valid();
+
+public:
+
+virtual QVariant returnValue()const override{return m_return_value;}
+
+    MoveRowsCmd(QStdItemModel*,
+                const QModelIndex &sourceParent, int sourceRow, int count,
+                const QModelIndex &destinationParent, int destinationChild,
+                QUndoCommand*parent=nullptr);
+
+    MoveRowsCmd(const QModelIndex &sourceParent, int sourceRow, int count,
+                const QModelIndex &destinationParent, int destinationChild,
+                QUndoCommand*parent=nullptr);
+
+    virtual void undo() override;
+    virtual void redo() override;
+};
+
 class QStdItemModel::CutItemCmd
         :public QStdItemModelCmd
 {
