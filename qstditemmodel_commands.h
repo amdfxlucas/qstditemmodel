@@ -20,6 +20,49 @@ public:
   virtual  QVariant returnValue()const;
 };
 
+class QStdItemModel::MoveRowsCmd
+:public QStdItemModelCmd
+{
+
+ /*Path m_source_path;
+ Path m_dest_path;
+ int src_row,count,dest_child;*/
+
+    /*
+     vielleicht ist es hier notwendig
+     sich zwei 'reference' s (src_ref & dest_ref )zu halten,
+     eins zu jedem Item (refs to parent-items pointed to by m_src_path & m_dest_path )
+*/
+
+QPersistentModelIndex sourceParent;
+QPersistentModelIndex destinationParent;
+int sourceRow,count,destinationChild;
+
+bool is_valid_cmd{true};
+
+bool m_return_value{false};
+
+QStdItem* src_item();
+QStdItem* dest_item();
+void check_valid();
+
+public:
+
+virtual QVariant returnValue()const override{return m_return_value;}
+
+    MoveRowsCmd(QStdItemModel*,
+                const QModelIndex &sourceParent, int sourceRow, int count,
+                const QModelIndex &destinationParent, int destinationChild,
+                QUndoCommand*parent=nullptr);
+
+    MoveRowsCmd(const QModelIndex &sourceParent, int sourceRow, int count,
+                const QModelIndex &destinationParent, int destinationChild,
+                QUndoCommand*parent=nullptr);
+
+    virtual void undo() override;
+    virtual void redo() override;
+};
+
 class QStdItemModel::CutItemCmd
         :public QStdItemModelCmd
 {
@@ -29,6 +72,7 @@ private:
     Path m_ret_path; // return value of QStdItemModel::cut(..)
     Path m_path;    // path to model index where the item was removed
     bool is_index_valid{true};
+    QPersistentModelIndex persistent_parent;
 public:
     virtual ~CutItemCmd();
 
@@ -48,19 +92,36 @@ public:
 class QStdItemModel::PasteItemCmd
         :public QStdItemModelCmd
 {private:
-
+bool is_index_valid{true};
     bool is_single_column{false};
     Path m_ret_path; // return value of QStdItemModel::paste(..)
-    Path m_path;    // path to model index where the item was removed
+    Path m_path;
+    // path to model index where the item will be inserted
+    // if strategy is 'AsChild' , the item pointed to by m_path
+    // will become the cut_item's parent
+    // if it is 'AsSibling' , the item will be inserted as a sibling
+    // of the item pointed to by m_path
+
     QStdItemModel* m_model;
+
 public:
+
+
+
     PasteItemCmd(QStdItemModel* m,
                const QModelIndex& idx,
+                 Behaviour b = AsSibling,
+               QUndoCommand* p=nullptr);
+
+    PasteItemCmd(QStdItemModel* m,
+               const Path& idx,
+                 Behaviour b= AsSibling,
                QUndoCommand* p=nullptr);
 
     virtual void  undo()override;
     virtual void redo() override;
-
+private:
+    Behaviour strategy;
 
 };
 

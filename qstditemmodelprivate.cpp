@@ -60,6 +60,7 @@
 #include <algorithm>
 
 
+
 QStdItemModelPrivate::QStdItemModelPrivate(QStdItemModel* m)
    : root(new QStdItem(m)), itemPrototype(nullptr)
 {
@@ -271,7 +272,8 @@ void QStdItemModelPrivate::decodeDataRecursive(QDataStream &stream, QStdItem *it
     int colCount, childCount;
     stream >> *item;
     stream >> colCount >> childCount;
-    item->setColumnCount(colCount);
+   // item->setColumnCount(colCount);
+    item->d_func()->setColumnCount_impl(colCount);
 
     int childPos = childCount;
 
@@ -279,10 +281,14 @@ void QStdItemModelPrivate::decodeDataRecursive(QDataStream &stream, QStdItem *it
     {
         childPos--;
         QStdItem *child = createItem();
-        child->setModel(q_func() )             ;
+      //  child->setModel(q_func() )             ;
+        child->d_func()->setModel(q_func());
+
+      //  auto child = new QStdItem(q_func());
 
         decodeDataRecursive(stream, child);
-        item->setChild( childPos / colCount, childPos % colCount, child);
+        //item->setChild( childPos / colCount, childPos % colCount, child);
+        item->d_func()->setChild(childPos / colCount, childPos % colCount, child);
     }
 
 }

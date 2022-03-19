@@ -61,7 +61,30 @@
 
 #include "qstditemcommands.h"
 
+// time_point_type stream i/o operators rely on ints duration type operators
+QDataStream &operator<<(QDataStream &out, const time_point_type &myObj)
+{
+    out << myObj.time_since_epoch();
+    return out;
+}
+QDataStream &operator>>(QDataStream &in, time_point_type &myObj)
+{   time_point_type::duration dur;
+    in >>dur;
+    myObj=time_point_type(dur);
+    return in;
+}
 
+QDataStream &operator<<(QDataStream &out, const duration_type &myObj)
+{
+    out<< myObj.count();
+    return out;
+}
+QDataStream &operator>>(QDataStream &in, duration_type &myObj)
+{   int count{0};
+    in >> count;
+    myObj=duration_type(count);
+    return in;
+}
 
 QMap<int,QVariant> QStdItem::itemData()const
 {
@@ -86,7 +109,7 @@ void QStdItem::setItemData(const QMap<int, QVariant> &roles)
         tmp->redo();
 
     }
-
+//update();
 
 }
 
@@ -105,14 +128,16 @@ QStdItem::QStdItem()
 QStdItem::QStdItem(const QString &text)
    : QStdItem(*new QStdItemPrivate)
 {
-   setText(text);
+  // setText(text);
+    d_func()->setData( Qt::DisplayRole,text);
 }
 
 
 QStdItem::QStdItem(const QIcon &icon, const QString &text)
    : QStdItem(text)
 {
-   setIcon(icon);
+   //setIcon(icon);
+    d_func()->setData( Qt::DecorationRole,icon);
 }
 
 /*!
@@ -121,13 +146,25 @@ QStdItem::QStdItem(const QIcon &icon, const QString &text)
 QStdItem::QStdItem(int rows, int columns)
    : QStdItem(*new QStdItemPrivate)
 {
-   setRowCount(rows);
-   setColumnCount(columns);
+     Q_D(QStdItem);
+   d->setRowCount_impl(rows);
+  d-> setColumnCount_impl(columns);
 }
 
+void QStdItem::update()
+{
+    scope_tagger t{"QStdItem::update"};
+}
 
 QStdItem::QStdItem(QStdItemPrivate &dd)
    : d_ptr(&dd)
+{
+   Q_D(QStdItem);
+   d->q_ptr = this;
+}
+
+QStdItem::QStdItem(QStdItemPrivate *dd)
+   : d_ptr(dd)
 {
    Q_D(QStdItem);
    d->q_ptr = this;
@@ -163,7 +200,9 @@ QStdItem &QStdItem::operator=(const QStdItem &other)
 unsigned long long QStdItem::uuid()const
 {
     Q_D(const QStdItem);
-    return d->uuid();
+    if(d)
+    {return d->uuid();}
+    else{return -1;}
 }
 /*!
  Destructs the item.
@@ -172,10 +211,11 @@ unsigned long long QStdItem::uuid()const
 QStdItem::~QStdItem()
 {
 
-   //qDebug()<< "QStdItem::~QStdItem()";
+   scope_tagger t {"QStdItem::~QStdItem()"};
 
    Q_D(QStdItem);
-   for (QStdItem *child : qAsConst(d->children)) {
+   for (QStdItem *child : qAsConst(d->children))
+   {
        if (child)
            child->d_func()->setModel(nullptr);
        delete child;
@@ -217,35 +257,6 @@ void QStdItem::setData(const QVariant &value, int role)
 {
 scope_tagger t{ "QStdItem::setData(const QVariant& value,int role)"};
 
-   // all this is now done by the SetDataCmd
-/*
-    Q_D(QStdItem);
-   role = (role == Qt::EditRole) ? Qt::DisplayRole : role;
-   const QList<int> roles((role == Qt::DisplayRole) ?
-                               QList<int>({Qt::DisplayRole, Qt::EditRole}) :
-                               QList<int>({role}));
-   for (auto it = d->values.begin(); it != d->values.end(); ++it) {
-       if ((*it).role == role) {
-           if (value.isValid()) {
-               if ((*it).value.userType() == value.userType() && (*it).value == value)
-                   return;
-               (*it).value = value;
-           } else {
-               // Don't need to assign proper it after erase() since we
-               // return unconditionally in this code path.
-               d->values.erase(it);
-           }
-           if (d->model)
-               d->model->d_func()->itemChanged(this, roles);
-           return;
-       }
-   }
-   d->values.append(QStdItemData(role, value));
-   if (d->model)
-       d->model->d_func()->itemChanged(this, roles);
-       */
-
-
    // if the item is not contained in a model (its 'model' pointer is null)
    // there is no undo_stack, we could push the command onto
    if(model() )
@@ -265,13 +276,6 @@ scope_tagger t{ "QStdItem::setData(const QVariant& value,int role)"};
 void QStdItem::clearData()
 {
   scope_tagger t{ "QStdItem::clearData"};
-
-   /* Q_D(QStdItem);
-   if (d->values.isEmpty())
-       return;
-   d->values.clear();
-   if (d->model)
-       d->model->d_func()->itemChanged(this, QList<int>{});*/
 
    if(model())
    {model()->undo_stack()->push( new ClearDataCmd(this) );}
@@ -372,25 +376,24 @@ void QStdItem::setEnabled(bool enabled)
 
 void QStdItem::setEditable(bool editable)
 {
-   qDebug()<< "<QStdItem::setEditable(bool editable)>";
+   scope_tagger t{ "QStdItem::setEditable(bool editable)"};
 
    Q_D(QStdItem);
    d->changeFlags(editable, Qt::ItemIsEditable);
 
-   qDebug()<< "</QStdItem::setEditable(bool editable)>";
 }
 
 void QStdItem::setSelectable(bool selectable)
 {
-   qDebug()<< "<QStdItem::setSelectable(bool selectable)>";
+   scope_tagger t{ "QStdItem::setSelectable(bool selectable)"};
        Q_D(QStdItem);
        d->changeFlags(selectable, Qt::ItemIsSelectable);
-   qDebug()<< "</QStdItem::setSelectable(bool selectable)>";
+
 }
 
 void QStdItem::setCheckable(bool checkable)
 {
-   qDebug()<< "<QStdItem::setCheckable(bool checkable)>";
+   scope_tagger t{ "QStdItem::setCheckable(bool checkable)"};
 
    Q_D(QStdItem);
    if (checkable && !isCheckable()) {
@@ -399,7 +402,7 @@ void QStdItem::setCheckable(bool checkable)
            setData(Qt::Unchecked, Qt::CheckStateRole);
    }
    d->changeFlags(checkable, Qt::ItemIsUserCheckable);
-   qDebug()<< "</QStdItem::setCheckable(bool checkable)>";
+
 }
 
 
@@ -442,11 +445,11 @@ void QStdItem::setAutoTristate(bool tristate)
 */
 void QStdItem::setUserTristate(bool tristate)
 {
-    qDebug()<< "<QStdItem::setTristate>";
+   scope_tagger t{ "QStdItem::setTristate"};
 
    Q_D(QStdItem);
    d->changeFlags(tristate, Qt::ItemIsUserTristate);
-   qDebug()<< "<(QStdItem::setTristate>";
+
 }
 
 /*!
@@ -466,21 +469,21 @@ void QStdItem::setUserTristate(bool tristate)
 
 void QStdItem::setDragEnabled(bool dragEnabled)
 {
-   qDebug()<< "<QStdItem::setDragEnabled>";
+   scope_tagger t{ "QStdItem::setDragEnabled"};
    Q_D(QStdItem);
    d->changeFlags(dragEnabled, Qt::ItemIsDragEnabled);
-   qDebug()<< "</QStdItem::setDragEnabled>";
+
 }
 
 
 void QStdItem::setDropEnabled(bool dropEnabled)
 {
-   qDebug()<< "<QStdItem::setDropEnabled(bool dropEnabled)>";
+   scope_tagger t{"QStdItem::setDropEnabled(bool dropEnabled)"};
 
    Q_D(QStdItem);
    d->changeFlags(dropEnabled, Qt::ItemIsDropEnabled);
 
-   qDebug()<< "</QStdItem::setDropEnabled(bool dropEnabled)>";
+
 }
 
 
@@ -531,6 +534,31 @@ QModelIndex QStdItem::index() const
    return d->model ? d->model->indexFromItem(this) : QModelIndex();
 }
 
+QList<QStdItem*> QStdItem::children()const
+{ Q_D(const QStdItem);
+    return d->get_children();
+}
+
+QList<QModelIndex> QStdItem::childIndexes()const
+{
+    Q_D(const QStdItem);
+    auto childs{d->get_children()};
+
+    QModelIndexList indexes;
+
+    for(auto* child : childs)
+    {
+        if(child)
+        {
+            indexes.append(child->index());
+        }
+
+    }
+
+return indexes;
+
+}
+
 /*!
  Returns the QStdItemModel that this item belongs to.
 
@@ -553,15 +581,7 @@ QStdItemModel *QStdItem::model() const
 */
 void QStdItem::setRowCount(int rows)
 {
-   qDebug()<< "<QStdItem::setRowCount>";
-
- /*  int rc = rowCount();
-   if (rc == rows)
-       return;
-   if (rc < rows)
-       insertRows(qMax(rc, 0), rows - rc);
-   else
-       removeRows(qMax(rows, 0), rc - rows); */
+   scope_tagger t{ "QStdItem::setRowCount"};
 
    if(model())
    {model()->undo_stack()->push(new SetRowCountCmd(this,rows));}
@@ -570,8 +590,7 @@ void QStdItem::setRowCount(int rows)
        auto ptr= std::make_shared<SetRowCountCmd>(this,rows);
        ptr->redo();
    }
-
-   qDebug()<< "</QStdItem::setRowCount>";
+//update();
 }
 
 /*!
@@ -593,16 +612,8 @@ int QStdItem::rowCount() const
 */
 void QStdItem::setColumnCount(int columns)
 {
-   qDebug()<< "<QStdItem::setColumnCount>";
+   scope_tagger t{"QStdItem::setColumnCount"};
 
- /*  int cc = columnCount();
-   if (cc == columns)
-       return;
-   if (cc < columns)
-       insertColumns(qMax(cc, 0), columns - cc);
-   else
-       removeColumns(qMax(columns, 0), cc - columns);
-       */
    if(model())
    {model()->undo_stack()->push(new SetColumnCountCmd(this,columns));}
    else
@@ -610,7 +621,7 @@ void QStdItem::setColumnCount(int columns)
        auto ptr= std::make_shared<SetColumnCountCmd>(this,columns);
        ptr->redo();
    }
-   qDebug()<< "</QStdItem::setColumnCount>";
+//update();
 }
 
 /*!
@@ -634,14 +645,6 @@ void QStdItem::insertRow(int row, const QList<QStdItem*> &items)
 {
   scope_tagger t{ "QStdItem::insertRow(int row, const QList<QStdItem*>& items)"};
 
-   /*Q_D(QStdItem);
-   if (row < 0)
-       return;
-
-   if (columnCount() < items.count())
-       setColumnCount(items.count());
-
-   d->insertRows(row, 1, items);*/
 
 if(model())
 {
@@ -652,7 +655,7 @@ else
    auto ptr= std::make_shared<InsertRowCmd>(this,row,items,true);
    ptr->redo();
 }
-
+//update();
 }
 
 // VARIANTE I
@@ -660,13 +663,6 @@ void QStdItem::insertRows(int row, const QList<QStdItem*> &items)
 {
   scope_tagger t{ "QStdItem::insertRows(int row, const QList<QStdItem*>& items)"};
 
- /*  Q_D(QStdItem);
-   if (row < 0)
-       return;
-
-   d->insertRows(row, items);
-
-   */
 if(model())
 {model()->undo_stack()->push(new InsertRowCmd(this,row,items,false));}
 else
@@ -674,7 +670,7 @@ else
    auto ptr= std::make_shared<InsertRowCmd>(this,row,items,false);
    ptr->redo();
 }
-
+//update();
 }
 
 /*!
@@ -689,17 +685,6 @@ void QStdItem::insertColumn(int column, const QList<QStdItem*> &items)
 {
   scope_tagger t{ "QStdItem::insertColumn(int column, const QList<QStdItem*>& items)"};
 
-   /*
-   Q_D(QStdItem);
-   if (column < 0)
-       return;
-
-   if (rowCount() < items.count())
-       setRowCount(items.count());
-
-   d->insertColumns(column, 1, items);
-   */
-
    if(model())
    {model()->undo_stack()->push(new InsertColumnCmd(this,column, items) );}
    else
@@ -708,7 +693,7 @@ void QStdItem::insertColumn(int column, const QList<QStdItem*> &items)
        ptr->redo();
    }
 
-
+//update();
 }
 
 // VARIANTE II
@@ -716,37 +701,19 @@ void QStdItem::insertRows(int row, int count)
 {
    scope_tagger t{"QStdItem::insertRows(int row,int count)"};
 
-   /*Q_D(QStdItem);
-   if (rowCount() < row)
-   {
-       count += row - rowCount();
-       row = rowCount();
-   }
-   d->insertRows(row, count, QList<QStdItem*>());
-   */
-
    if(model())
    {model()->undo_stack()->push(new InsertRowCmd(this, row, count ) );}
    else{
        auto ptr= std::make_shared<InsertRowCmd>(this,row,count);
        ptr->redo();
    }
-
+//update();
 }
 
 // VARIANTE II
 void QStdItem::insertColumns(int column, int count)
 {
  scope_tagger t{"QStdItem::insertColumns(int column,int count)"};
-
-   /*Q_D(QStdItem);
-   if (columnCount() < column)
-{
-       count += column - columnCount();
-       column = columnCount();
-   }
-
-   d->insertColumns(column, count, QList<QStdItem*>());*/
 
    if(model())
    {
@@ -759,10 +726,13 @@ void QStdItem::insertColumns(int column, int count)
        auto ptr= std::make_shared<InsertColumnCmd>(this,column,count);
        ptr->redo();
    }
-
+//update();
 }
 
-
+bool QStdItem::hasChild(unsigned long long int uuid)const
+{
+    return d_func()->hasChild(uuid);
+}
 
 
 void QStdItem::removeRow(int row)
@@ -770,7 +740,7 @@ void QStdItem::removeRow(int row)
    scope_tagger t{ "QStdItem::removeRow(int row)"};
 
    removeRows(row, 1);
-
+//update();
 }
 
 /*!
@@ -783,7 +753,7 @@ void QStdItem::removeColumn(int column)
 {
    scope_tagger t{ "QStdItem::removeColumn(int columns)"};
    removeColumns(column, 1);
-
+//update();
 }
 
 /*!
@@ -796,31 +766,6 @@ void QStdItem::removeRows(int row, int count)
 {
   scope_tagger t{ "QStdItem::removeRows(int row,int count)"};
 
-   /*
-
-   Q_D(QStdItem);
-   if ((count < 1) || (row < 0) || ((row + count) > rowCount()))
-       return;
-
-   if (d->model)
-       d->model->d_func()->rowsAboutToBeRemoved(this, row, row + count - 1);
-
-   int i = d->childIndex(row, 0);
-   int n = count * d->columnCount();
-   for (int j = i; j < n+i; ++j)
- {
-       QStdItem *oldItem = d->children.at(j);
-       if (oldItem)
-           oldItem->d_func()->setModel(nullptr);
-       delete oldItem;
-   }
-   d->children.remove(qMax(i, 0), n);
-   d->rows -= count;
-
-   if (d->model)
-       d->model->d_func()->rowsRemoved(this, row, count);
-   */
-
 if(model())
 {model()->undo_stack()->push(new RemoveRowsCmd(this,row,count) );
 }
@@ -829,7 +774,7 @@ else
    auto ptr= std::make_shared<RemoveRowsCmd>(this,row,count);
    ptr->redo();
 }
-
+//update();
 }
 
 /*!
@@ -841,35 +786,6 @@ else
 void QStdItem::removeColumns(int column, int count)
 {
   scope_tagger t{"QStdItem::removeColumns(int column, int count)"};
-   /*
-   Q_D(QStdItem);
-
-   if ((count < 1) || (column < 0) || ((column + count) > columnCount()))
-       return;
-
-   if (d->model)
-       d->model->d_func()->columnsAboutToBeRemoved(this, column, column + count - 1);
-
-   for (int row = d->rowCount() - 1; row >= 0; --row)
-   {
-       int i = d->childIndex(row, column);
-
-       for (int j=i; j<i+count; ++j)
-       {
-           QStdItem *oldItem = d->children.at(j);
-
-           if (oldItem)
-               oldItem->d_func()->setModel(nullptr);
-
-           delete oldItem;
-       }
-       d->children.remove(i, count);
-   }
-   d->columns -= count;
-
-   if (d->model)
-       d->model->d_func()->columnsRemoved(this, column, count);
-   */
 
    if(model())
    {model()->undo_stack()->push(new RemoveColumnsCmd(this,column,count) );}
@@ -878,7 +794,7 @@ void QStdItem::removeColumns(int column, int count)
        auto ptr= std::make_shared<RemoveColumnsCmd>(this,column,count);
        ptr->redo();
    }
-
+//update();
 }
 
 
@@ -900,10 +816,6 @@ void QStdItem::setChild(int row, int column, QStdItem *item)
 {
   scope_tagger t{"QStdItem::setChild(int row,int column, QStdItem* item)"};
 
-   Q_D(QStdItem);
-  // d->setChild(row, column, item, true);
-
-
    if(model())
    {
        model()->undo_stack()->push(new SetChildCmd(this,row,column,item) );
@@ -914,7 +826,7 @@ void QStdItem::setChild(int row, int column, QStdItem *item)
        tmp->redo();
    }
 
-
+//update();
 }
 
 
@@ -926,6 +838,7 @@ QStdItem *QStdItem::child(int row, int column) const
        return nullptr;
    return d->children.at(index);
 }
+
 
 /*!
    Removes the child item at (\a row, \a column) without deleting it, and returns
@@ -942,54 +855,10 @@ QStdItem *QStdItem::takeChild(int row, int column)
    scope_tagger t{"QStdItem::takeChild(int row,int column)"};
 
    Q_D(QStdItem);
-   QStdItem *item = nullptr;
-   int index = d->childIndex(row, column);
-   if (index != -1)
-   {
-       QModelIndex changedIdx;
-       item = d->children.at(index);
-       if (item && d->model)
-       {
-           QStdItemPrivate *const item_d = item->d_func();
-           const int savedRows = item_d->rows;
-           const int savedCols = item_d->columns;
-           const QVector<QStdItem*> savedChildren = item_d->children;
 
-           if (savedRows > 0)
-           {
-               d->model->d_func()->rowsAboutToBeRemoved(item, 0, savedRows - 1);
-               item_d->rows = 0;
-               item_d->children = QVector<QStdItem*>(); //slightly faster than clear
-               d->model->d_func()->rowsRemoved(item, 0, savedRows);
-           }
-
-           if (savedCols > 0)
-           {
-               d->model->d_func()->columnsAboutToBeRemoved(item, 0, savedCols - 1);
-               item_d->columns = 0;
-               if (!item_d->children.isEmpty())
-                   item_d->children = QVector<QStdItem*>(); //slightly faster than clear
-               d->model->d_func()->columnsRemoved(item, 0, savedCols);
-           }
-
-           item_d->rows = savedRows;
-           item_d->columns = savedCols;
-           item_d->children = savedChildren;
-           changedIdx = d->model->indexFromItem(item);
-           item_d->setParentAndModel(nullptr, nullptr);
-       }
-
-       d->children.replace(index, nullptr);
-       // warum hier nicht remove ?!
-
-       if (changedIdx.isValid())
-           d->model->dataChanged(changedIdx, changedIdx);
-   }
-
-
-
-
-   return item;
+   auto tmp{ d->takeChild(row,column)};
+   update();
+   return tmp;
 }
 
 /*!
@@ -1005,34 +874,31 @@ QList<QStdItem*> QStdItem::takeRow(int row)
   scope_tagger t{ "QStdItem::takeRow"};
 
    Q_D(QStdItem);
-   QList<QStdItem*> items;
-   if ((row < 0) || (row >= rowCount()))
-   {
-       return items;
-   }
 
-   if (d->model)
-       d->model->d_func()->rowsAboutToBeRemoved(this, row, row);
+  auto tmp{d->takeRow(row)};
+  update();
+  return tmp;
+}
 
-   int index = d->childIndex(row, 0);  // Will return -1 if there are no columns
-   if (index != -1)
-   {
-       int col_count = d->columnCount();
-       items.reserve(col_count);
-       for (int column = 0; column < col_count; ++column)
-       {
-           QStdItem *ch = d->children.at(index + column);
-           if (ch)
-               ch->d_func()->setParentAndModel(nullptr, nullptr);
-           items.append(ch);
-       }
-       d->children.remove(index, col_count);
-   }
-   d->rows--;
-   if (d->model)
-       d->model->d_func()->rowsRemoved(this, row, 1);
 
-   return items;
+QList<QList<QStdItem*>> QStdItem::takeRows(int row,int count)
+{
+
+  scope_tagger t{ "QStdItem::takeRow"};
+
+   Q_D(QStdItem);
+
+  if(row>=rowCount()||count<=0)return {};
+
+  QList<QList<QStdItem*>> tmp_list;
+
+  for(int i{row};i<row+count;++i)
+  {
+      auto tmp{d->takeRow(row)};
+      tmp_list.append(tmp);
+  }
+  update();
+  return tmp_list;
 }
 
 /*!
@@ -1047,31 +913,10 @@ QList<QStdItem*> QStdItem::takeColumn(int column)
   scope_tagger t{ "QStdItem::takeColumn"};
 
    Q_D(QStdItem);
-   QList<QStdItem*> items;
-   if ((column < 0) || (column >= columnCount()))
-   {
-       return items;
-   }
-   if (d->model)
-       d->model->d_func()->columnsAboutToBeRemoved(this, column, column);
 
-   const int rowCount = d->rowCount();
-   items.reserve(rowCount);
-   for (int row = rowCount - 1; row >= 0; --row)
-   {
-       int index = d->childIndex(row, column);
-       QStdItem *ch = d->children.at(index);
-       if (ch)
-           ch->d_func()->setParentAndModel(nullptr, nullptr);
-       d->children.remove(index);
-       items.prepend(ch);
-   }
-   d->columns--;
-   if (d->model)
-       d->model->d_func()->columnsRemoved(this, column, 1);
-
-
-   return items;
+  auto tmp{ d->takeColumn(column)};
+  update();
+  return tmp;
 }
 
 /*!
@@ -1123,6 +968,7 @@ void QStdItem::sortChildren(int column, Qt::SortOrder order)
    if (d->model)
        emit d->model->layoutChanged(parents, QAbstractItemModel::VerticalSortHint);
 
+update();
    }
 
 /*!
@@ -1232,7 +1078,7 @@ out << ptr_data;
 
    \sa {Serializing Qt Data Types}
 */
-QDataStream &operator>>(QDataStream &in, QStdItem &item)
+TEST_LIB_EXPORT QDataStream & operator>>(QDataStream &in, QStdItem &item)
 {
    item.read(in);
    return in;
@@ -1248,7 +1094,7 @@ QDataStream &operator>>(QDataStream &in, QStdItem &item)
 
    \sa {Serializing Qt Data Types}
 */
-QDataStream &operator<<(QDataStream &out, const QStdItem &item)
+TEST_LIB_EXPORT QDataStream &operator<<(QDataStream &out, const QStdItem &item)
 {
    item.write(out);
    return out;

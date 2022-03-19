@@ -54,13 +54,14 @@
  #include "qstditemmodel.h"
 #include "QtGui/private/qtguiglobal_p.h"
 #include "QtCore/private/qabstractitemmodel_p.h"
+//#include "qabstractitemmodel_p.h"
 
 #include <QtCore/qlist.h>
 #include <QtCore/qpair.h>
 #include <QtCore/qstack.h>
 #include <QtCore/qvariant.h>
 #include <QtCore/qdebug.h>
-
+#include <QtCore/QObject>
 
 QT_REQUIRE_CONFIG(standarditemmodel);
 
@@ -97,10 +98,23 @@ inline QDebug &operator<<(QDebug &debug, const QStdItemData &data)
 
 
 
-class QStdItemPrivate
+class TEST_LIB_EXPORT QStdItemPrivate
+        : public QObject
 {
-    Q_DECLARE_PUBLIC(QStdItem)
+Q_OBJECT
+private:
+  //  Q_DECLARE_PUBLIC(QStdItem)
+protected:
+      Q_DECLARE_PUBLIC(QStdItem)
 public:
+
+~QStdItemPrivate();
+ signals:
+    void free_uuid(unsigned long long uuid);
+
+public:
+
+
     inline QStdItemPrivate()
         : model(nullptr),
           parent(nullptr),
@@ -128,7 +142,7 @@ public:
     Qt::ItemFlags setFlags(Qt::ItemFlags f);
 
     // sets the Data under the given role and returns the old value
-    QVariant setData(int m_role,const QVariant& m_value);
+  virtual  QVariant setData(int m_role,const QVariant& m_value);
 
     unsigned long long uuid()const {return m_uuid;}
 
@@ -147,7 +161,7 @@ public:
 
 
     QPair<int, int> position() const;
-    void setChild(int row, int column, QStdItem *item,
+    QStdItem* setChild(int row, int column, QStdItem *item,
                   bool emitChanged = false);
     inline int rowCount() const {
         return rows;
@@ -156,6 +170,7 @@ public:
         return columns;
     }
     void childDeleted(QStdItem *child);
+    QList<QStdItem*> get_children()const{return children;}
 
     void setModel(QStdItemModel *mod);
 
@@ -163,6 +178,7 @@ public:
         QStdItem *par,
         QStdItemModel *mod)
     {
+      // q_func()-> setModel(mod);
         setModel(mod);
         parent = par;
     }
@@ -173,13 +189,24 @@ public:
 
     const QMap<int, QVariant> itemData() const;
 
-    bool insertRows(int row, int count, const QList<QStdItem*> &items);
+    bool insertRows(int row, int count, const QList<QStdItem*> &items,bool _emit=true);
 
-    bool insertRows(int row, const QList<QStdItem*> &items);
+    QList<QStdItem*> removeRows(int row,int count,bool _emit = true);
+    QList<QStdItem*> removeColumns(int column,int count);
+    int setRowCount_impl(int m_rows);
+    int setColumnCount_impl(int m_columns);
+
+    bool insertRows(int row, const QList<QStdItem*> &items,bool _emit=true);
 
     bool insertColumns(int column, int count, const QList<QStdItem*> &items);
 
     void sortChildren(int column, Qt::SortOrder order);
+     QStdItem *takeChild(int row, int column = 0);
+     QList<QStdItem*> takeRow(int row);
+     QList<QStdItem*> takeColumn(int column);
+
+    bool hasChild(unsigned long long int uuid)const;
+    bool hasChildren()const;
 
     QStdItemModel *model;
     QStdItem *parent;
@@ -193,8 +220,6 @@ public:
     // every Item has a globally unique Identifier
     inline static unsigned long long next_free_uuid{0};
     unsigned long long m_uuid;
-
-
 
     mutable int lastKnownIndex; // this is a cached value
 };
@@ -253,7 +278,6 @@ public:
 
 
     QStdItem* cut_item;
-
 
     QString m_filename;
     QList<QStdItem *> columnHeaderItems;

@@ -39,7 +39,7 @@
 
 #ifndef QSTDITEMMODEL_H
 #define QSTDITEMMODEL_H
-
+#include "import_export.h"
 //#include <QUndoCommand>
 #include "undostack.h"
 
@@ -47,6 +47,7 @@
 
 #include <QtGui/qtguiglobal.h>
 #include <QtCore/qabstractitemmodel.h>
+//#include "qabstractitemmodel.h"
 #include <QtGui/qbrush.h>
 #include <QtGui/qfont.h>
 #include <QtGui/qicon.h>
@@ -71,23 +72,37 @@ class QStdItemModelPrivate;
 // QModelIndex pathToIndex(const Path &path, const QAbstractItemModel *model);
 
 
-class  QStdItemModel
+class TEST_LIB_EXPORT QStdItemModel
         : public QAbstractItemModel
 {
     Q_OBJECT
     Q_PROPERTY(int sortRole READ sortRole WRITE setSortRole BINDABLE bindableSortRole)
-
+protected:
     class CutItemCmd;
     class PasteItemCmd;
+    class MoveRowsCmd;
 
     class QStdItemModelCmd    ; // base class for commands
 
     class SetVHeaderItemCmd;
     class SetHHeaderItemCmd;
 
+    using item_cmd_t = QStdItem::StdItemCmd;
+    using set_item_data_cmd_t =  QStdItem::SetDataCmd;
+    using remove_row_cmd_t = QStdItem::RemoveRowsCmd;
+
+private slots:
+    void connectRefCtrl();
+
 public:
+    enum Behaviour {AsChild,AsSibling,Absolute};
+
+    void  iterate(const auto& func,const QModelIndex & index=QModelIndex()) const;
+    virtual QModelIndexList find(const QModelIndex& start_node, int role, const QVariant& key) const;
+
  static   Path pathFromIndex(const QModelIndex &index);
     QModelIndex pathToIndex(const Path &path);
+
     static Path parentPath(const Path& );
 
     QString filename() const ;
@@ -96,12 +111,17 @@ public:
     void save();
     void load();
 
-    void saveToFile(const QString& filename= QString()) ;
+    void saveToFile(const QString& filename= QString(),const QModelIndex& selection=QModelIndex()) ;
     void loadFromFile(const QString& filename=QString()  );
 
+    bool contains(unsigned long long int uuid)const;
+    bool contains(QStdItem* item)const;
+
+virtual bool canAcceptCut(const QModelIndex&)const;
+virtual bool canAcceptPaste(const QModelIndex&)const;
     QModelIndex cut(const QModelIndex &index);
     bool hasCutItem() const ;
-    QModelIndex paste(const QModelIndex &index);
+    QModelIndex paste(const QModelIndex &index,Behaviour b = AsSibling);
 
     UndoStack* undo_stack() const{return m_stack;};
 
@@ -134,6 +154,20 @@ public:
     bool removeRows(int row, int count, const QModelIndex &parent = QModelIndex()) override;
     bool removeColumns(int column, int count, const QModelIndex &parent = QModelIndex()) override;
 
+
+
+    virtual bool	moveColumns(const QModelIndex &sourceParent, int sourceColumn, int count,
+                                const QModelIndex &destinationParent, int destinationChild)override;
+
+    // inlined (no need to override)
+    //   bool	moveColumn(const QModelIndex &sourceParent, int sourceColumn,
+    //                      const QModelIndex &destinationParent, int destinationChild) ;
+   // bool	moveRow(const QModelIndex &sourceParent, int sourceRow,
+   //                 const QModelIndex &destinationParent, int destinationChild);
+
+    virtual bool	moveRows(const QModelIndex &sourceParent, int sourceRow, int count,
+                             const QModelIndex &destinationParent, int destinationChild)override;
+
     Qt::ItemFlags flags(const QModelIndex &index) const override;
     Qt::DropActions supportedDropActions() const override;
 
@@ -152,8 +186,8 @@ public:
     QStdItem *item(int row, int column = 0) const;
     void setItem(int row, int column, QStdItem *item);
     inline void setItem(int row, QStdItem *item);
-    // warum gibt es nicht 'insertItem(const QModelIndex& index, QStdItem* item)' ??
 
+    // warum gibt es nicht 'insertItem(const QModelIndex& index, QStdItem* item)' ??
 
     QStdItem *invisibleRootItem() const;
 
@@ -215,6 +249,7 @@ protected:
 
     void setModel(QStdItem* item)
     {item->setModel(this);}
+     Q_DECLARE_PRIVATE(QStdItemModel)
 private:
 
 
@@ -225,11 +260,51 @@ private:
     friend class QStdItemPrivate;
     friend class QStdItem;
     Q_DISABLE_COPY(QStdItemModel)
-    Q_DECLARE_PRIVATE(QStdItemModel)
+
 
     Q_PRIVATE_SLOT(d_func(), void _q_emitItemChanged(const QModelIndex &topLeft,
                                                      const QModelIndex &bottomRight))
 };
+
+
+
+void  QStdItemModel::iterate(const auto& func,const QModelIndex & index) const
+ {
+    if (index.isValid())
+    {
+    // Do action here
+     func(this->itemFromIndex(index));
+   // func(static_cast<QStdItem*>(index.internalPointer()) );
+
+    }
+
+    if (!this->hasChildren(index)
+            // || (index.flags() &    Qt::ItemNeverHasChildren)
+            )
+    {
+        return;
+    }
+
+    auto item{index.isValid() ? this->itemFromIndex(index) : invisibleRootItem() };
+    if(item)
+    {
+    // auto rows = this->rowCount(index);
+        auto rows = item->rowCount();
+
+    for (int i = 0; i < rows; ++i)
+     {/*
+        auto child_idx{this->index(i, 0, index)};
+        iterate(func,child_idx);*/
+
+        auto child{item->child(i,0)};
+        if(child)
+        {iterate(func,child->index());
+        }
+    }
+    }
+}
+
+
 
 inline void QStdItemModel::setItem(int arow, QStdItem *aitem)
 { setItem(arow, 0, aitem); }
@@ -250,7 +325,6 @@ inline bool QStdItemModel::insertColumn(int acolumn, const QModelIndex &aparent)
 Q_GUI_EXPORT QDataStream &operator>>(QDataStream &in, QStdItem &item);
 Q_GUI_EXPORT QDataStream &operator<<(QDataStream &out, const QStdItem &item);
 #endif
-
 
 
 QT_END_NAMESPACE

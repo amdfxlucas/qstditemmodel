@@ -37,8 +37,9 @@
 **
 ****************************************************************************/
 
-#ifndef UNDOSTACK_H
-#define UNDOSTACK_H
+#ifndef QUNDOSTACK_H
+#define QUNDOSTACK_H
+#include "import_export.h"
 
 #include <QtGui/qtguiglobal.h>
 #include <QtCore/qobject.h>
@@ -55,7 +56,13 @@ class QAction;
 class QUndoCommandPrivate;
 class UndoStackPrivate;
 
-class  QUndoCommand
+// QUndoCommand symbols are already defined in Qt6Gui.dll / Qt6Guid.dll
+// eighter change name from QUndoCommand in UndoCommand everywhere or
+// simply do not export QUndoCommand symbols
+// THIS IS ONLY POSSIBLE AS LONG AS I DO NOT CHANGE ANYTHING IN THE QUndoCommand
+// IMPLEMENTATION !
+
+class /* TEST_LIB_EXPORT*/ QUndoCommand
 {
     QUndoCommandPrivate *d;
 
@@ -87,7 +94,7 @@ private:
 
 #if QT_CONFIG(undostack)
 
-class  UndoStack
+class TEST_LIB_EXPORT UndoStack
         : public QObject
 {
     Q_OBJECT
@@ -162,7 +169,7 @@ private:
   //  bool push_lock{false}; // moved to undostack_private to not break binary compatibility
 };
 
-class UndoStackLock
+class TEST_LIB_EXPORT UndoStackLock
 {
 private:
     bool prev_state;

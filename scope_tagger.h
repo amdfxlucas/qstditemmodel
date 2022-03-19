@@ -13,6 +13,7 @@ public: scope_tagger(const QString& str): m_str(str){qDebug() << "<"+str +">";};
     ~scope_tagger(){qDebug()<< "</" +m_str+ ">"; }
 };
 
+
 template <class Callable1,class Callable2>
 class on_scope_exit
 {

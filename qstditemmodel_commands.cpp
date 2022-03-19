@@ -86,10 +86,13 @@ QVariant QStdItemModel::QStdItemModelCmd::returnValue()const
    QStdItemModel::CutItemCmd::CutItemCmd(QStdItemModel* m,
               const QModelIndex& idx,
               QUndoCommand* p)
-       : QStdItemModelCmd(m,p)
+       : QStdItemModelCmd(m,p),
+         persistent_parent(idx.parent())
    {
+       setText("QStdItemModel::CutItemCmd");
        m_path= m->pathFromIndex(idx);
-       is_index_valid = (idx.isValid() )? true:false;
+       //is_index_valid = (idx.isValid() )? true:false;
+       is_index_valid = m->canAcceptCut(idx);
 
    }
 
@@ -103,9 +106,10 @@ void QStdItemModel::CutItemCmd::undo()
                        qDebug().noquote()<< "</QStdItemModel::CutItemCmd::undo>";}
                    };
 
-    auto p_path{model()->parentPath(m_path)};
+    auto p_path{model()->parentPath(m_path)}; // path to persistent_parent index
 
       auto parent_index{model()->pathToIndex(p_path ) };
+      Q_ASSERT(persistent_parent==parent_index);
 
       if(!is_index_valid)
       {
@@ -120,12 +124,16 @@ void QStdItemModel::CutItemCmd::undo()
       // QStdItem::setChild delegates to SetChildCmd::redo which delegates to QStdItemPrivate::setChild
       // which resizes rows & columns to fit its new child if neccessary
         auto parent{model()->itemFromIndex(parent_index)};
-        if(parent==nullptr) {parent= model()->invisibleRootItem();}
+        if(parent==nullptr)
+        {parent= model()->invisibleRootItem();
+        }
 
         if(is_parent_single_column)
         {
             auto cut_item{model()->d_func()->cut_item};
             parent->insertRow(row,cut_item);
+
+          //  parent->update(); unneccessary because done by undoCmd
         }
         else
         {
@@ -178,7 +186,8 @@ void  QStdItemModel::CutItemCmd::redo()
     Q_ASSERT(model()->d_func()->cut_item);
 
     QStdItem *parent =model()->d_func()->cut_item->parent();
-    if(!parent){parent=model()->invisibleRootItem();}
+    if(!parent)
+    {parent=model()->invisibleRootItem();}
 
     Q_ASSERT(parent);
 
@@ -197,15 +206,17 @@ void  QStdItemModel::CutItemCmd::redo()
 
 
     if(is_parent_single_column)
-      {
-         auto items = parent->takeRow(row);
+    {
+        auto items = parent->takeRow(row);
 
-         Q_ASSERT(!items.isEmpty());
+        Q_ASSERT(!items.isEmpty());
 
-          child = items.takeFirst();
+        child = items.takeFirst();
+
+        //  parent->update(); unneccessary, because done by the implementation
     }else
     {
-         child = parent->takeChild(row);
+        child = parent->takeChild(row);
     }
 
     model()->endRemoveRows();
@@ -239,12 +250,28 @@ void  QStdItemModel::CutItemCmd::redo()
 
 QStdItemModel::PasteItemCmd::PasteItemCmd(QStdItemModel* m,
            const QModelIndex& idx,
+           Behaviour b,
            QUndoCommand* p)
-    : QStdItemModelCmd(m,p)
+    : QStdItemModelCmd(m,p),
+      strategy(b)
 {
+    setText("QStdItemModel::PasteItemCmd");
+    is_index_valid=m->canAcceptPaste(idx);
+
     m_path= m->pathFromIndex(idx);
 
 
+}
+
+QStdItemModel::PasteItemCmd::PasteItemCmd(QStdItemModel* m,
+           const Path& pth,
+           Behaviour b,
+           QUndoCommand* p)
+    : QStdItemModelCmd(m,p),
+      strategy(b),m_path(pth)
+{
+    setText("QStdItemModel::PasteItemCmd");
+is_index_valid=m->canAcceptPaste(m->pathToIndex(m_path) );
 }
 
 void QStdItemModel::PasteItemCmd::undo()
@@ -257,6 +284,8 @@ void QStdItemModel::PasteItemCmd::undo()
                        qDebug().noquote()<< "</QStdItemModel::PasteItemCmd::undo>";}
                    };
 
+    if(!is_index_valid)return;
+
     auto index{model()->pathToIndex(m_path)};
 
     auto cutItem{model()->d_func()->cut_item};
@@ -264,7 +293,7 @@ void QStdItemModel::PasteItemCmd::undo()
 
    if (!index.isValid() )
    {
-       m_ret_path=m_path;
+       m_ret_path=m_path; // fehlt hier nicht return ?!
    }
 
    QStdItem* child{nullptr};
@@ -274,7 +303,8 @@ void QStdItemModel::PasteItemCmd::undo()
    Q_ASSERT(sibling);
 
    QStdItem *parent = sibling->parent();
-   if(parent==nullptr){parent=model()->invisibleRootItem();}
+   if(parent==nullptr)
+   {parent=model()->invisibleRootItem();}
 
 
     int row = sibling->row() + 1;
@@ -311,49 +341,258 @@ void QStdItemModel::PasteItemCmd::redo()
                        qDebug().noquote()<< "</QStdItemModel::PasteItemCmd::redo>";}
                    };
 
+if(!is_index_valid)return;
 
-     auto index{model()->pathToIndex(m_path)};
+auto index{model()->pathToIndex(m_path)};
 
      auto cutItem{model()->d_func()->cut_item};
 
-    if (!index.isValid() || !cutItem)
+
+    switch(strategy)
     {
-        m_ret_path=m_path;
+    case AsSibling:
+    {
+
+        if (!index.isValid() || !cutItem)
+        {
+            m_ret_path=m_path;
+        }
+
+        QStdItem *sibling = model()->itemFromIndex(index);
+
+        Q_ASSERT(sibling);
+
+        QStdItem *parent = sibling->parent();
+
+        if(parent==nullptr)
+        {parent=model()->invisibleRootItem();}
+
+            auto cols{parent->columnCount()};
+            is_single_column= cols==1;
+
+
+       // int row = parent->rowOfChild(sibling) + 1;
+         int row = sibling->row() + 1;
+
+        model()->beginInsertRows(index.parent(), row, row);
+
+        if(is_single_column)
+          {
+            parent->insertRow(row,cutItem);
+        }  else
+        {
+            parent->setChild(row, cutItem);
+        }
+
+
+        QStdItem *child = cutItem;
+        model()->d_func()->cut_item=nullptr;
+
+        model()->endInsertRows();
+
+        // return model()->createIndex(row, 0, child);
+
+        m_ret_path= model()->pathFromIndex(model()->createIndex(row, 0, child) );
+
+        break;
     }
+    case AsChild:
+    {
+        if (!index.isValid() || !cutItem)
+        {
+            m_ret_path=m_path;
+        }
 
-    QStdItem *sibling = model()->itemFromIndex(index);
+        QStdItem *parent_item = model()->itemFromIndex(index);
 
-    Q_ASSERT(sibling);
+        Q_ASSERT(parent_item);
 
-    QStdItem *parent = sibling->parent();
-
-    if(parent==nullptr){parent=model()->invisibleRootItem();}
-
-        auto cols{parent->columnCount()};
+        auto cols{parent_item->columnCount()};
         is_single_column= cols==1;
 
 
-   // int row = parent->rowOfChild(sibling) + 1;
-     int row = sibling->row() + 1;
 
-    model()->beginInsertRows(index.parent(), row, row);
+     int row = parent_item->rowCount();
 
-    if(is_single_column)
-      {
-        parent->insertRow(row,cutItem);
-    }  else
-    {
-        parent->setChild(row, cutItem);
-    }
+    model()->beginInsertRows(index, row, row);
+
+        parent_item->appendRow(cutItem);
 
 
-    QStdItem *child = cutItem;
     model()->d_func()->cut_item=nullptr;
 
     model()->endInsertRows();
 
-    // return model()->createIndex(row, 0, child);
 
-    m_ret_path= model()->pathFromIndex(model()->createIndex(row, 0, child) );
+        m_ret_path= model()->pathFromIndex(model()->createIndex(row, 0, cutItem) );
+
+        break;
+    }
+    case Absolute:
+    {
+        break;
+    }
+    }
+
+
+
+}
+
+void QStdItemModel::MoveRowsCmd::check_valid()
+{
+    QStdItem* source_item{src_item()};
+    QStdItem* desti_item{dest_item()};
+
+
+    Q_ASSERT(source_item);
+    Q_ASSERT(desti_item);
+
+    //if(source_item->rowCount()<sourceRow+count             )
+    if(model()->rowCount(sourceParent) <sourceRow+count)
+    {   qDebug()<< " cannot move non-existing (past the end) rows ";
+        m_return_value=false;
+        is_valid_cmd=false;
+    }
+
+    //if( destinationChild - desti_item->rowCount() > 0 )
+        // neighter can rows be inserted past-the end(with a gap between)
+    if(destinationChild - model()->rowCount(destinationParent) > 0)
+    {
+        qDebug()<< "cannot insert row past-the end  under destination parent";
+       is_valid_cmd=false;
+       m_return_value=false;
+    }
+}
+
+QStdItemModel::MoveRowsCmd::MoveRowsCmd(QStdItemModel* m,
+                                        const QModelIndex &_sourceParent,
+                                        int _sourceRow, int _count,
+                                        const QModelIndex &_destinationParent,
+                                        int _destinationChild,
+                                        QUndoCommand*parent)
+    :QStdItemModelCmd(m,parent),
+      destinationParent(_destinationParent),
+      sourceParent(_sourceParent),
+      sourceRow(_sourceRow),
+      count(_count),
+      destinationChild(_destinationChild)
+{
+    Q_ASSERT(sourceParent.model()==destinationParent.model());
+    Q_ASSERT(sourceParent.model()==m);
+
+    check_valid();
+}
+
+QStdItemModel::MoveRowsCmd::MoveRowsCmd(const QModelIndex &_sourceParent,
+                                        int _sourceRow, int _count,
+                                        const QModelIndex &_destinationParent,
+                                        int _destinationChild,
+                                        QUndoCommand*parent)
+    :QStdItemModelCmd(const_cast<QStdItemModel*>(
+                          reinterpret_cast<const QStdItemModel*>(
+                              _sourceParent.model()))
+                      ,parent),
+      destinationParent(_destinationParent),
+      sourceParent(_sourceParent),
+      sourceRow(_sourceRow),
+      count(_count),
+      destinationChild(_destinationChild)
+{
+    Q_ASSERT(sourceParent.model()==destinationParent.model());
+    Q_ASSERT(model());
+
+
+  check_valid();
+
+
+
+}
+
+QStdItem* QStdItemModel::MoveRowsCmd::src_item()
+{
+     auto d {model()->d_func()};
+     QStdItem* source_item{};
+     if(sourceParent.isValid())
+     {
+        // source_item = itemFromIndex(sourceParent);
+         source_item= d->itemFromIndex(sourceParent);
+     }else
+     {
+         source_item = model()->invisibleRootItem();
+     }
+  return source_item;
+}
+
+QStdItem* QStdItemModel::MoveRowsCmd::dest_item()
+{
+     auto d {model()->d_func()};
+      QStdItem* desti_item{};
+      if(destinationParent.isValid())
+      {
+          //dest_item=itemFromIndex(destinationParent);
+          desti_item=d->itemFromIndex(destinationParent);
+      }else
+      {
+          desti_item=model()->invisibleRootItem();
+      }
+      return desti_item;
+}
+
+void QStdItemModel::MoveRowsCmd::redo()
+{
+    if(!is_valid_cmd)
+    { qDebug()<< "invalid MoveRowsCmd redone";
+        return;
+    }
+
+    auto source_item{src_item()};
+    auto desti_item{dest_item()};
+
+
+         model()->beginMoveRows(sourceParent, sourceRow, sourceRow+count-1,   destinationParent,  destinationChild);
+
+            //beginMoveRows(src_parent, sourceRow, sourceRow+count,
+            //                              dest_parent,  destinationChild);
+         {
+        // QSignalBlocker lck{this};
+    // beginMoveRows(source_item->index(),sourceRow,sourceRow+count,dest_item->index(),destinationChild);
+
+      //   auto tmp_list{source_item->takeRows(sourceRow,count)};
+       auto tmp_list{  source_item->d_func()->removeRows(sourceRow,count,false)};
+
+     //   success={dest_item->d_func()->insertRows(destinationChild,count,tmp_list,false)};
+          m_return_value={desti_item->d_func()->insertRows(destinationChild,tmp_list,false)};
+
+         }
+
+         if(!m_return_value)qDebug()<< "MoveRowsCmd::redo failed";
+
+       model()->endMoveRows();
+
+         source_item->update();
+         desti_item->update();
+
+
+}
+
+
+void QStdItemModel::MoveRowsCmd::undo()
+{
+    if(!is_valid_cmd){return;}
+
+
+    auto source_item{src_item()};
+    auto desti_item{dest_item()};
+
+     model()->beginMoveRows(destinationParent, destinationChild, destinationChild+count-1,   sourceParent,  sourceRow);
+
+     auto tmp_list{desti_item->d_func()->removeRows(destinationChild,count,false)};
+
+     m_return_value = source_item->d_func()->insertRows(sourceRow,tmp_list,false);
+
+     model()->endMoveRows();
+
+       source_item->update();
+       desti_item->update();
 
 }

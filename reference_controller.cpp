@@ -1,5 +1,6 @@
 #include "reference_controller.h"
 #include "qstditemmodel.h"
+#include "qstditemmodel_p.h"
 
 
 bool reference::operator==(const reference& ref)const
@@ -8,18 +9,23 @@ bool reference::operator==(const reference& ref)const
   return m_cmd==ref.m_cmd;
 }
 
+int reference_controller::cmd_count()const
+{
+    return m_ref.size();
+}
+
+void reference_controller::clear()
+{
+    m_ref.clear();
+}
+
 bool reference:: referToSameItem(const reference& ref)const
 {
     // two references compare equal, if they reference the same item in the model
     // eigther by pointer , path or model index
 
-   /* return (m_path==ref.m_path ||
-               m_item==ref.m_item ||
-             m_index==ref.m_index)
-           && this!= &ref;
-           */
 
-    return m_item->uuid()== ref.m_item->uuid() && this!=&ref;
+    return (m_item->uuid()==ref.m_item->uuid() )  && this!= &ref;
 }
 
 /*
@@ -27,6 +33,32 @@ inline bool operator==(const reference& a, const reference& b)
 {
     return a.operator==(b);
 }*/
+
+void reference_controller::lock(bool lck)
+{
+    locked=lck;
+}
+
+void reference_controller::modelDestroyed(QObject* m)
+{
+    /*
+    auto deleted_model{dynamic_cast<QStdItemModel*>(m)};
+
+    auto i=m_ref.begin();
+    auto end{m_ref.end()};
+
+    while(i!=end )
+    {
+        if( i.value() ->m_model == deleted_model  )
+        {
+           auto count{m_ref.remove(i.key(),i.value())};
+           Q_ASSERT(count==1);
+        }
+        ++i;
+    }
+    */
+
+}
 
 uint qHash(unsigned long long i)
 {
@@ -49,15 +81,27 @@ reference::reference(QStdItem* i,
     if(i->model())
     {
         m_model =i->model();
-        m_index= i->index();
-        m_path = QStdItemModel::pathFromIndex(m_index);
+
+        if(m_model->contains(item_uuid))
+        {   m_index= i->index();
+            m_path = QStdItemModel::pathFromIndex(m_index);
+        }
     }
 
     connect(this,&reference::validReference,
             m_controller, &reference_controller::validReference);
 
+    connect(i->d_func(),&QStdItemPrivate::free_uuid,
+            ctrl,&reference_controller::free_uuid);
+
 }
 
+void reference_controller::free_uuid(unsigned long long uuid)
+{
+    // QStdItemPrivate emits 'free_uuid(unsigned long long uuid)' signal in its Destructor
+    // what causes reference_controller to delete all references, which refer to this uuid
+    m_ref.remove(uuid);
+}
 
 reference_controller::reference_controller()
     : QObject()
@@ -69,7 +113,11 @@ void reference_controller::invalidReference(reference* ref)
 {
     // removes an unneded reference after ~StdItemCmd was called
 
+
+    if(!locked)
+    {
     auto c{m_ref.remove(ref->item_uuid,ref) };
+    }
 
 }
 
@@ -93,6 +141,8 @@ reference* reference_controller::new_reference(QStdItem *i,  QStdItem::StdItemCm
 
 void reference_controller::validReference(reference* ref)
 {
+    if(locked){return;}
+
     // precondition: the reference 'ref' must be valid !
     // its path, index, model, and item-pointer
 
