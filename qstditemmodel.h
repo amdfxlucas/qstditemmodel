@@ -39,7 +39,6 @@
 
 #ifndef QSTDITEMMODEL_H
 #define QSTDITEMMODEL_H
-#include "import_export.h"
 //#include <QUndoCommand>
 #include "undostack.h"
 
@@ -72,7 +71,7 @@ class QStdItemModelPrivate;
 // QModelIndex pathToIndex(const Path &path, const QAbstractItemModel *model);
 
 
-class TEST_LIB_EXPORT QStdItemModel
+class QStdItemModel
         : public QAbstractItemModel
 {
     Q_OBJECT
