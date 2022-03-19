@@ -1,11 +1,7 @@
 QT += widgets
 #requires(qtConfig(treeview))
 CONFIG += c++20
-CONFIG+= staticlib # to build a static lib instead of shared
 
-TEMPLATE=lib
-
-DEFINES += MAKE_TEST_LIB
 
 win32:
 {
@@ -35,7 +31,8 @@ INCLUDEPATH+="/home/lucas/Qt/6.1.3/gcc_64/include/QtCore/6.1.3"
 
 
 HEADERS     =    aqp.hpp \
-    import_export.h \
+   ui_mainwindow.h\
+   mainwindow.h\
     qstditemmodel_commands.h \
     qundogroup.h \
     myqtreeview.h \
@@ -50,6 +47,8 @@ HEADERS     =    aqp.hpp \
     undostack_p.h
 
 SOURCES     = aqp.cpp \
+            mainwindow.cpp\
+            main.cpp\
               qstditemmodel_commands.cpp \
               qundogroup.cpp \
               myqtreeview.cpp \
