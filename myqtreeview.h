@@ -2,10 +2,8 @@
 #define MYQTREEVIEW_H
 #include <QTreeView>
 #include "path.h"
-#include "import_export.h"
 
-
-class TEST_LIB_EXPORT  MyQTreeView
+class  MyQTreeView
         : public QTreeView
 {
 public:
