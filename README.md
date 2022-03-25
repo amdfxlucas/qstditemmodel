@@ -41,3 +41,4 @@ by a mere call to QStdItemModel::undo/redo.
 moreover it implements:
 -   [`bool	moveRow(const QModelIndex &sourceParent, int sourceRow, const QModelIndex &destinationParent, int destinationChild)`](https://doc.qt.io/qt-6/qabstractitemmodel.html#moveRow)
 -   [`virtual bool	moveRows(const QModelIndex &sourceParent, int sourceRow, int count, const QModelIndex &destinationParent, int destinationChild)`](https://doc.qt.io/qt-6/qabstractitemmodel.html#moveRows)
+which QStandardItemModel regretfully doesn't
