@@ -52,6 +52,7 @@
 #include "qstditemmodel.h"
 #include <QHelpEvent>
 #include <QToolTip>
+#include "moverowsdialog.h"
 //#include "treemodel.h"
 //  #include <QUndoView>
 #include <QFile>
@@ -67,6 +68,14 @@ void MainWindow::moveRows()
     // show a dialog which gets sourceParent, destinationParent, sourceRow, count , destinationChild
     // from user and calls model->moveRows(..)
 
+    auto dlg=new MoveRowsDialog(model,this);
+
+    if(dlg->exec())
+    {
+        auto cmd{dlg->get_cmd()};
+
+        model->undo_stack()->push(cmd.release());
+    }
 }
 
 bool MainWindow::eventFilter(QObject *watched, QEvent *event)

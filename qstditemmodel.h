@@ -85,7 +85,8 @@ protected:
 
     class SetVHeaderItemCmd;
     class SetHHeaderItemCmd;
-
+public:
+    using move_rows_cmd_t= MoveRowsCmd;
     using item_cmd_t = QStdItem::StdItemCmd;
     using set_item_data_cmd_t =  QStdItem::SetDataCmd;
     using remove_row_cmd_t = QStdItem::RemoveRowsCmd;
@@ -97,7 +98,10 @@ public:
     enum Behaviour {AsChild,AsSibling,Absolute};
 
     void  iterate(const auto& func,const QModelIndex & index=QModelIndex()) const;
+     bool  iterate_interuptable(const auto& func,const QModelIndex & index=QModelIndex()) const;
     virtual QModelIndexList find(const QModelIndex& start_node, int role, const QVariant& key) const;
+    std::optional<QModelIndex> find_uid(unsigned long long uid,const QModelIndex& start_node=QModelIndex()) const;
+
 
  static   Path pathFromIndex(const QModelIndex &index);
     QModelIndex pathToIndex(const Path &path);
@@ -272,16 +276,18 @@ void  QStdItemModel::iterate(const auto& func,const QModelIndex & index) const
     if (index.isValid())
     {
     // Do action here
-     func(this->itemFromIndex(index));
+      func(this->itemFromIndex(index));
    // func(static_cast<QStdItem*>(index.internalPointer()) );
 
     }
+
+
 
     if (!this->hasChildren(index)
             // || (index.flags() &    Qt::ItemNeverHasChildren)
             )
     {
-        return;
+        return ;
     }
 
     auto item{index.isValid() ? this->itemFromIndex(index) : invisibleRootItem() };
@@ -303,6 +309,48 @@ void  QStdItemModel::iterate(const auto& func,const QModelIndex & index) const
     }
 }
 
+
+    bool  QStdItemModel::iterate_interuptable(const auto& func,const QModelIndex & index) const
+     {
+        bool cont {true}; // shall search continue ?! or do we already have found what we were after
+
+        if (index.isValid())
+        {
+        // Do action here
+        cont =   func(this->itemFromIndex(index));
+       // func(static_cast<QStdItem*>(index.internalPointer()) );
+
+        }
+
+        if(!cont)return false;
+
+        if (!this->hasChildren(index)
+                // || (index.flags() &    Qt::ItemNeverHasChildren)
+                )
+        {
+            return true;
+        }
+
+        auto item{index.isValid() ? this->itemFromIndex(index) : invisibleRootItem() };
+        if(item)
+        {
+        // auto rows = this->rowCount(index);
+            auto rows = item->rowCount();
+
+        for (int i = 0; i < rows; ++i)
+         {/*
+            auto child_idx{this->index(i, 0, index)};
+            iterate(func,child_idx);*/
+
+            auto child{item->child(i,0)};
+            if(child)
+            {       //cont = iterate_interuptable(func,child->index());
+                cont = iterate_interuptable(func,indexFromItem(child));
+                  if(!cont)return false;
+            }
+        }
+        }
+    }
 
 
 inline void QStdItemModel::setItem(int arow, QStdItem *aitem)

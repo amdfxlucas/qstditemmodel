@@ -165,6 +165,8 @@ public:
         actionsMenu->addAction(removeRowAction);
         actionsMenu->addAction(removeColumnAction);
         actionsMenu->addSeparator();
+        actionsMenu->addAction(moveRowsAction);
+        actionsMenu->addSeparator();
         actionsMenu->addAction(insertChildAction);
         actionsMenu->addSeparator();
         actionsMenu->addAction(undo_action);

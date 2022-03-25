@@ -136,6 +136,47 @@ QStdItemModel::QStdItemModel(QObject *parent)
 
 }
 
+  // change the return type to std::optional<QModelIndex> !!
+ std::optional< QModelIndex> QStdItemModel::find_uid(unsigned long long uid,const QModelIndex& start_node) const
+{
+    QModelIndexList hits;
+    auto search_key = [&hits,&uid](const auto* item)
+    {
+        if(item)
+        {
+            if(item->uuid()==uid)
+            {
+                hits<<item->index();
+                return false; // end the search
+            }
+
+        }
+        return true; // continue the search
+    };
+
+    //iterate_interuptable(search_key,start_node);
+
+    iterate(search_key,start_node);
+  //  if(hits.isEmpty())return QModelIndex();
+
+
+
+ if(!(hits.isEmpty())         )
+ {
+     return hits.first();
+ }
+ else
+ {  if(invisibleRootItem()->uuid()==uid)
+     {return QModelIndex();}
+     else{
+     return std::nullopt;
+     }
+ }
+
+
+
+}
+
 
 void QStdItemModel::connectRefCtrl()
 {

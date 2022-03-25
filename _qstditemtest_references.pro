@@ -31,6 +31,7 @@ INCLUDEPATH+="/home/lucas/Qt/6.1.3/gcc_64/include/QtCore/6.1.3"
 
 
 HEADERS     =    aqp.hpp \
+    moverowsdialog.h \
    ui_mainwindow.h\
    mainwindow.h\
     qstditemmodel_commands.h \
@@ -49,6 +50,7 @@ HEADERS     =    aqp.hpp \
 SOURCES     = aqp.cpp \
             mainwindow.cpp\
             main.cpp\
+    moverowsdialog.cpp \
               qstditemmodel_commands.cpp \
               qundogroup.cpp \
               myqtreeview.cpp \
@@ -59,3 +61,6 @@ SOURCES     = aqp.cpp \
               qstditemprivate.cpp \
               reference_controller.cpp \
               undostack.cpp
+
+FORMS += \
+    moverowsdialog.ui
