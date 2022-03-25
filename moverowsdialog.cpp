@@ -155,6 +155,10 @@ void MoveRowsDialog::on_ok()
 
                             );
     }
+            else
+            {
+                return;
+            }
 
 
      QDialog::accept();

@@ -44,6 +44,7 @@ HEADERS     =    aqp.hpp \
     qstditemmodel_p.h \
     reference_controller.h \
     scope_tagger.h \
+    ui_moverowsdialog.h \
     undostack.h \
     undostack_p.h
 
@@ -62,5 +63,4 @@ SOURCES     = aqp.cpp \
               reference_controller.cpp \
               undostack.cpp
 
-FORMS += \
-    moverowsdialog.ui
+FORMS +=
