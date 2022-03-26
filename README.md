@@ -20,8 +20,13 @@ in which every single public modifying method can seamlessly be un/re-done ,
 by a mere call to QStdItemModel::undo/redo.
 
  In its main branch this repo contains an example project similar to [Qt's Simple-Tree-Model](https://doc.qt.io/qt-5/qtwidgets-itemviews-editabletreemodel-example.html), that uses QStdItemModel instead.
+ 
+ ![GUI](/media/screenshot.png "Example Project")
+ 
  A QUndoView adjacent to the ItemView reveals any QUndoCommands pushed onto the model's internal UndoStack,
  as a consequence of user actions carried out in the GUI.
+ 
+ ![Actions](/media/actions.png "Actions Menu")
  
  If your interest is (self)educational in nature you might want to have a look at [^fn2],[^fn1] which i found helpful.
  As opposed to [^fn2] which proposes a 'model-based' undo design[^fn3],
