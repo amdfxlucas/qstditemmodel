@@ -479,7 +479,7 @@ QStdItemModel::MoveRowsCmd::MoveRowsCmd(QStdItemModel* m,
 {
     Q_ASSERT(sourceParent.model()==destinationParent.model());
     Q_ASSERT(sourceParent.model()==m);
-
+    setText("QStdItemModel::MoveRowsCmd");
     check_valid();
 }
 
@@ -500,7 +500,7 @@ QStdItemModel::MoveRowsCmd::MoveRowsCmd(const QModelIndex &_sourceParent,
 {
     Q_ASSERT(sourceParent.model()==destinationParent.model());
     Q_ASSERT(model());
-
+ setText("QStdItemModel::MoveRowsCmd");
 
   check_valid();
 
